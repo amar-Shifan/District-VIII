@@ -8,9 +8,11 @@ import { CardSkeleton } from "@/components/CardSkeleton";
 import { FoodCard } from "@/components/FoodCard";
 import { HomeHeader } from "@/components/HomeHeader";
 import { EightBallIcon } from "@/components/icons/EightBallIcon";
-import { useMyBookingStatus, useUnitsSummary } from "@/hooks/use-live-data";
+import { useMyBookingStatus, usePublicSettings, useUnitsSummary } from "@/hooks/use-live-data";
+import { useLiveUpdates } from "@/hooks/use-live-updates";
+import { useCustomerProfile } from "@/lib/customer-profile";
 import { clearRevealPending, isRevealPending } from "@/lib/transition";
-import type { UnitAvailability } from "@/lib/types";
+import type { UnitAvailabilitySummary } from "@district-viii/shared";
 
 const CARD_DELAY_S = 0.25;
 const CARD_STAGGER_S = 0.09;
@@ -29,10 +31,10 @@ function CardSlot({ index, children }: { index: number; children: ReactNode }) {
 }
 
 function LiveCard({ availability, isError, skeletonLabel, render }: {
-  availability: UnitAvailability | undefined;
+  availability: UnitAvailabilitySummary | undefined;
   isError: boolean;
   skeletonLabel: string;
-  render: (availability: UnitAvailability) => ReactNode;
+  render: (availability: UnitAvailabilitySummary) => ReactNode;
 }) {
   if (availability) return render(availability);
   if (isError) {
@@ -47,7 +49,10 @@ function LiveCard({ availability, isError, skeletonLabel, render }: {
 
 export function HomeScreen() {
   const units = useUnitsSummary();
-  const booking = useMyBookingStatus();
+  const profile = useCustomerProfile();
+  const booking = useMyBookingStatus(profile?.phone ?? null);
+  const settings = usePublicSettings();
+  useLiveUpdates();
   // Read once on mount: true only right after the landing slide-to-open reveal.
   const [fadeFromReveal] = useState(isRevealPending);
 
@@ -59,7 +64,7 @@ export function HomeScreen() {
     <div className="relative flex h-full flex-col bg-ink">
       <div aria-hidden className="bg-home-glow pointer-events-none absolute inset-x-0 top-0 h-2/3" />
 
-      <HomeHeader hasPendingBooking={booking.data?.hasPending ?? false} />
+      <HomeHeader hasPendingBooking={booking.data?.hasPending ?? false} closeHour={settings.data?.closeHour} />
 
       <main className="relative grid min-h-0 flex-1 grid-rows-3 gap-3 px-4 pt-3 pb-[calc(var(--safe-bottom)+16px)]">
         <h1 className="sr-only">District VIII: live availability</h1>

@@ -7,9 +7,17 @@ import { VENUE } from "@/lib/venue";
 
 interface HomeHeaderProps {
   hasPendingBooking: boolean;
+  /** Closing hour from the API settings; falls back to the venue default while loading. */
+  closeHour?: number;
 }
 
-export function HomeHeader({ hasPendingBooking }: HomeHeaderProps) {
+function formatClosing(hour: number): string {
+  const display = hour % 12 === 0 ? 12 : hour % 12;
+  return `${display}:00 ${hour < 12 ? "AM" : "PM"}`;
+}
+
+export function HomeHeader({ hasPendingBooking, closeHour }: HomeHeaderProps) {
+  const closesAt = closeHour === undefined ? VENUE.closesAtLabel : formatClosing(closeHour);
   return (
     <motion.header
       className="relative z-10 mx-4 mt-[calc(var(--safe-top)+12px)] rounded-full"
@@ -28,7 +36,7 @@ export function HomeHeader({ hasPendingBooking }: HomeHeaderProps) {
               <span className="relative size-1.5 rounded-full bg-white motion-safe:animate-dot-pulse" />
             </span>
             <span>
-              <span className="sr-only">Open now. </span>Tonight · till {VENUE.closesAtLabel}
+              <span className="sr-only">Open now. </span>Tonight · till {closesAt}
             </span>
           </p>
         </div>

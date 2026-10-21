@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
-import { formatClockTime } from "@/lib/format";
-import type { UnitAvailability } from "@/lib/types";
+import { formatIstClock, type UnitAvailabilitySummary } from "@district-viii/shared";
 import { CountUp } from "./CountUp";
 import { HomeCard } from "./HomeCard";
 import { StatusPill } from "./StatusPill";
@@ -10,14 +9,14 @@ interface AvailabilityCardProps {
   label: string;
   /** Plural noun for the caption, e.g. "tables" or "consoles". */
   unitNoun: string;
-  availability: UnitAvailability;
+  availability: UnitAvailabilitySummary;
   decoration: ReactNode;
 }
 
 export function AvailabilityCard({ href, label, unitNoun, availability, decoration }: AvailabilityCardProps) {
   const { free, total, nextFreeAt } = availability;
   const isFull = free === 0;
-  const nextFree = nextFreeAt ? formatClockTime(nextFreeAt) : null;
+  const nextFree = nextFreeAt ? formatIstClock(nextFreeAt) : null;
 
   const caption = isFull ? (nextFree ? `Next free: ${nextFree}` : "All in use right now") : `${unitNoun} free right now`;
   const ariaLabel = `${label}: ${free} of ${total} ${unitNoun} free${isFull && nextFree ? `, next free at ${nextFree}` : ""}. Book now.`;
