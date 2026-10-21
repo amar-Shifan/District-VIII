@@ -7,7 +7,18 @@ This is a monorepo with npm workspaces:
 | Workspace  | Status    | Stack                                                                                |
 | ---------- | --------- | ------------------------------------------------------------------------------------ |
 | `apps/web` | ✅ built  | Next.js 16 (App Router), TypeScript strict, Tailwind CSS v4, Framer Motion, GSAP, TanStack Query |
-| `apps/api` | 🔜 later  | NestJS + MongoDB                                                                     |
+| `apps/api` | ✅ built  | NestJS 11, Mongoose, Passport JWT, socket.io, @nestjs/schedule, Swagger at `/docs` |
+| `packages/shared` | ✅ built | Shared DTO types, enums, validation rules and Asia/Kolkata time helpers |
+
+## Backend quick start
+
+```bash
+docker compose up -d mongo          # or run a local mongod on 27017
+cp apps/api/.env.example apps/api/.env
+npm run seed -w apps/api            # demo units, food, bookings and admin@district8.local
+npm run dev:api                     # http://localhost:4000, Swagger at /docs
+npm test                            # unit + e2e tests (in-memory MongoDB)
+```
 
 ## Setup
 
