@@ -1,0 +1,108 @@
+"use client";
+
+import { motion, useReducedMotion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AnimatedTitle, getTitleEntranceEnd } from "@/components/AnimatedTitle";
+import { LandingBackground } from "@/components/LandingBackground";
+import { ParticleField } from "@/components/ParticleField";
+import { SlideToOpen, type SlideOrigin } from "@/components/SlideToOpen";
+import { markRevealPending } from "@/lib/transition";
+
+const HOME_ROUTE = "/home";
+const TITLE_LINES = ["district", "VIII"] as const;
+const REVEAL_SIZE = 48;
+
+interface Reveal {
+  x: number;
+  y: number;
+  scale: number;
+}
+
+export function LandingScreen() {
+  const router = useRouter();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
+  const [reveal, setReveal] = useState<Reveal | null>(null);
+  // Reduced-motion users get the controls immediately instead of after the title sequence.
+  const taglineDelay = reduceMotion ? 0 : getTitleEntranceEnd(TITLE_LINES) + 0.1;
+
+  useEffect(() => {
+    router.prefetch(HOME_ROUTE);
+  }, [router]);
+
+  const navigateHome = useCallback(() => {
+    markRevealPending();
+    router.push(HOME_ROUTE);
+  }, [router]);
+
+  const handleComplete = useCallback(
+    (origin: SlideOrigin) => {
+      const root = rootRef.current?.getBoundingClientRect();
+      if (!root) {
+        navigateHome();
+        return;
+      }
+      const x = origin.x - root.left;
+      const y = origin.y - root.top;
+      // Scale the circle until it covers the farthest corner of the screen.
+      const farthest = Math.max(
+        Math.hypot(x, y),
+        Math.hypot(root.width - x, y),
+        Math.hypot(x, root.height - y),
+        Math.hypot(root.width - x, root.height - y),
+      );
+      setReveal({ x, y, scale: (farthest * 2) / REVEAL_SIZE + 1 });
+    },
+    [navigateHome],
+  );
+
+  return (
+    <div ref={rootRef} className="relative flex h-full flex-col overflow-hidden">
+      <LandingBackground />
+      <ParticleField count={24} />
+
+      <main className="@container relative z-10 flex flex-1 flex-col items-center justify-center px-6 pt-[var(--safe-top)] text-center">
+        <AnimatedTitle
+          lines={TITLE_LINES}
+          label="District VIII"
+          className="text-[clamp(4.5rem,30cqw,8.5rem)]"
+        />
+        <motion.p
+          className="mt-8 pl-[0.55em] text-xs font-semibold tracking-[0.55em] text-blush uppercase"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: taglineDelay, duration: 0.8, ease: "easeOut" }}
+        >
+          Pool · PS5 · Food
+        </motion.p>
+      </main>
+
+      <motion.div
+        className="relative z-10 px-6 pb-[calc(var(--safe-bottom)+28px)]"
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: taglineDelay + 0.2, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <SlideToOpen onComplete={handleComplete} />
+      </motion.div>
+
+      {reveal && (
+        <motion.div
+          aria-hidden
+          className="pointer-events-none absolute z-50 rounded-full bg-burgundy"
+          style={{
+            width: REVEAL_SIZE,
+            height: REVEAL_SIZE,
+            left: reveal.x - REVEAL_SIZE / 2,
+            top: reveal.y - REVEAL_SIZE / 2,
+          }}
+          initial={{ scale: 0 }}
+          animate={{ scale: reveal.scale }}
+          transition={reduceMotion ? { duration: 0 } : { duration: 0.7, ease: [0.7, 0, 0.3, 1] }}
+          onAnimationComplete={navigateHome}
+        />
+      )}
+    </div>
+  );
+}

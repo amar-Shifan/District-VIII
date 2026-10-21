@@ -1,0 +1,16 @@
+{
+  "name": "district-viii",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @district-viii/web",
+    "build": "npm run build -w @district-viii/web",
+    "start": "npm run start -w @district-viii/web",
+    "lint": "npm run lint -w @district-viii/web"
+  },
+  "engines": {
+    "node": ">=20.9"
+  }
+}

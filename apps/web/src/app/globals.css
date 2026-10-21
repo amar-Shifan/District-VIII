@@ -1,0 +1,362 @@
+@import "tailwindcss";
+
+/*
+ * District VIII design tokens: the single source of truth for color, type,
+ * radius, shadows and motion. Components only reference these tokens.
+ * `--color-*: initial` removes Tailwind's default palette so no other hue
+ * can sneak into the app.
+ */
+@theme {
+  --color-*: initial;
+  --color-burgundy: #7a1020;
+  --color-burgundy-dark: #4a0812;
+  --color-burgundy-bright: #a01830;
+  --color-ink: #0a0a0a;
+  --color-white: #ffffff;
+  --color-blush: #e8d5d8;
+
+  --radius-card: 28px;
+  --radius-card-sm: 24px;
+
+  --shadow-glow: 0 0 28px -6px color-mix(in srgb, var(--color-burgundy-bright) 70%, transparent);
+  --shadow-card:
+    0 18px 44px -18px color-mix(in srgb, var(--color-burgundy-bright) 75%, transparent),
+    0 0 26px -10px color-mix(in srgb, var(--color-burgundy-bright) 55%, transparent);
+  --shadow-handle: 0 6px 22px -4px color-mix(in srgb, var(--color-burgundy-bright) 90%, transparent);
+  --shadow-shell:
+    0 0 140px 10px color-mix(in srgb, var(--color-burgundy-bright) 30%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--color-white) 6%, transparent);
+
+  --animate-ken-burns: ken-burns 20s ease-in-out infinite;
+  --animate-float-up: float-up 14s linear infinite;
+  --animate-shine: shine 5s ease-in-out infinite;
+  --animate-glow-pulse: glow-pulse 3.2s ease-in-out infinite;
+  --animate-chevron: chevron 1.6s ease-in-out infinite;
+  --animate-ping-soft: ping-soft 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  --animate-dot-pulse: dot-pulse 1.8s ease-in-out infinite;
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+  --animate-border-spin: border-spin 6s linear infinite;
+  --animate-fade-up: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  @keyframes ken-burns {
+    0%,
+    100% {
+      transform: scale(1.06) translate3d(0, 0, 0);
+    }
+    50% {
+      transform: scale(1.18) translate3d(-2.5%, -2%, 0);
+    }
+  }
+
+  @keyframes float-up {
+    0% {
+      transform: translate3d(0, 0, 0);
+      opacity: 0;
+    }
+    12%,
+    78% {
+      opacity: var(--particle-opacity, 0.7);
+    }
+    100% {
+      transform: translate3d(var(--particle-drift, 0px), -112dvh, 0);
+      opacity: 0;
+    }
+  }
+
+  /* Sweep runs left to right, then rests for the remainder of the cycle. */
+  @keyframes shine {
+    0% {
+      background-position: 120% 0;
+    }
+    35%,
+    100% {
+      background-position: -20% 0;
+    }
+  }
+
+  @keyframes glow-pulse {
+    0%,
+    100% {
+      opacity: 0.55;
+      transform: scale(0.94);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.06);
+    }
+  }
+
+  @keyframes chevron {
+    0%,
+    100% {
+      opacity: 0.15;
+      transform: translateX(-3px);
+    }
+    50% {
+      opacity: 1;
+      transform: translateX(3px);
+    }
+  }
+
+  @keyframes ping-soft {
+    0% {
+      opacity: 0.7;
+      transform: scale(1);
+    }
+    80%,
+    100% {
+      opacity: 0;
+      transform: scale(1.35);
+    }
+  }
+
+  @keyframes dot-pulse {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.45;
+      transform: scale(0.75);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  @keyframes border-spin {
+    from {
+      transform: translate(-50%, -50%) rotate(0deg);
+    }
+    to {
+      transform: translate(-50%, -50%) rotate(360deg);
+    }
+  }
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@theme inline {
+  --font-display: var(--font-anton);
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
+  --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  color-scheme: dark;
+}
+
+/* Customer app screens are fixed 100dvh "native" screens: no page scroll. */
+html:has([data-scroll-lock]),
+html:has([data-scroll-lock]) body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  background-color: var(--color-ink);
+  color: var(--color-white);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---------- Surfaces ---------- */
+
+@utility bg-shell-glow {
+  background-image: radial-gradient(
+    45% 65% at 50% 50%,
+    color-mix(in srgb, var(--color-burgundy) 38%, transparent),
+    transparent 72%
+  );
+}
+
+@utility bg-landing-fallback {
+  background-color: var(--color-ink);
+  background-image:
+    radial-gradient(
+      60% 38% at 22% 24%,
+      color-mix(in srgb, var(--color-burgundy-bright) 60%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      55% 34% at 86% 58%,
+      color-mix(in srgb, var(--color-burgundy) 75%, transparent),
+      transparent 72%
+    ),
+    linear-gradient(
+      180deg,
+      var(--color-burgundy) 0%,
+      var(--color-burgundy-dark) 55%,
+      var(--color-ink) 100%
+    );
+}
+
+@utility bg-landing-overlay {
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-burgundy) 82%, transparent) 0%,
+    color-mix(in srgb, var(--color-burgundy-dark) 76%, transparent) 48%,
+    color-mix(in srgb, var(--color-ink) 90%, transparent) 82%,
+    var(--color-ink) 100%
+  );
+}
+
+@utility bg-home-glow {
+  background-image: radial-gradient(
+    85% 55% at 50% 0%,
+    color-mix(in srgb, var(--color-burgundy-bright) 42%, transparent),
+    transparent 72%
+  );
+}
+
+@utility bg-screen-burgundy {
+  background-color: var(--color-ink);
+  background-image:
+    radial-gradient(
+      90% 55% at 50% 0%,
+      color-mix(in srgb, var(--color-burgundy-bright) 45%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(180deg, var(--color-burgundy-dark) 0%, var(--color-ink) 100%);
+}
+
+@utility bg-card-gradient {
+  background-image: linear-gradient(
+    145deg,
+    var(--color-burgundy) 0%,
+    var(--color-burgundy-dark) 100%
+  );
+}
+
+@utility bg-title-glow {
+  background-image: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--color-burgundy-bright) 85%, transparent),
+    transparent
+  );
+}
+
+@utility bg-shimmer {
+  background-image: linear-gradient(
+    100deg,
+    transparent 20%,
+    color-mix(in srgb, var(--color-blush) 14%, transparent) 50%,
+    transparent 80%
+  );
+}
+
+@utility bg-reveal-fill {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-burgundy-bright) 10%, transparent),
+    color-mix(in srgb, var(--color-burgundy-bright) 75%, transparent)
+  );
+}
+
+@utility bg-noise {
+  background-image: var(--noise);
+  background-size: 160px 160px;
+}
+
+/* ---------- Text effects ---------- */
+
+@utility text-glow {
+  text-shadow:
+    0 0 22px color-mix(in srgb, var(--color-burgundy-bright) 95%, transparent),
+    0 0 64px color-mix(in srgb, var(--color-burgundy-bright) 65%, transparent);
+}
+
+/* Transparent overlay layer: only the moving highlight is visible. */
+@utility text-shine-overlay {
+  color: transparent;
+  background-image: linear-gradient(
+    110deg,
+    transparent 40%,
+    color-mix(in srgb, var(--color-white) 95%, transparent) 50%,
+    transparent 60%
+  );
+  background-size: 250% 100%;
+  background-position: 120% 0;
+  background-clip: text;
+  -webkit-background-clip: text;
+  text-shadow: none;
+}
+
+/* Solid text with a built-in sweep, for white type on dark glass. */
+@utility text-shine {
+  color: transparent;
+  background-image: linear-gradient(
+    110deg,
+    color-mix(in srgb, var(--color-white) 88%, transparent) 40%,
+    var(--color-white) 50%,
+    color-mix(in srgb, var(--color-white) 88%, transparent) 60%
+  );
+  background-size: 250% 100%;
+  background-position: 120% 0;
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+/* ---------- Animated border (masked rotating conic gradient) ---------- */
+
+@utility border-glow {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  mask:
+    linear-gradient(var(--color-white) 0 0) content-box exclude,
+    linear-gradient(var(--color-white) 0 0);
+  -webkit-mask:
+    linear-gradient(var(--color-white) 0 0) content-box,
+    linear-gradient(var(--color-white) 0 0);
+  -webkit-mask-composite: xor;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 160%;
+    aspect-ratio: 1;
+    background-image: conic-gradient(
+      from 0deg,
+      transparent 0 62%,
+      var(--color-burgundy-bright) 78%,
+      var(--color-blush) 84%,
+      transparent 92%
+    );
+    transform: translate(-50%, -50%);
+    animation: var(--animate-border-spin);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::before {
+      animation: none;
+    }
+  }
+}
