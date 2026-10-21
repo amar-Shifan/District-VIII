@@ -99,7 +99,7 @@ async function seed(): Promise<void> {
 
     await admins.create({
       email: email.toLowerCase(),
-      name: process.env.SEED_ADMIN_NAME ?? 'District VIII Admin',
+      name: process.env.SEED_ADMIN_NAME ?? 'Arena Manager',
       passwordHash: await hashPassword(password),
     });
 

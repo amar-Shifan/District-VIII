@@ -14,6 +14,9 @@
   --color-ink: #0a0a0a;
   --color-white: #ffffff;
   --color-blush: #e8d5d8;
+  /* Admin panel: soft white page and deep wine text (greys are wine-ink at reduced opacity). */
+  --color-soft-white: #faf6f6;
+  --color-wine-ink: #1a0a0d;
 
   --radius-card: 28px;
   --radius-card-sm: 24px;
@@ -23,6 +26,13 @@
     0 18px 44px -18px color-mix(in srgb, var(--color-burgundy-bright) 75%, transparent),
     0 0 26px -10px color-mix(in srgb, var(--color-burgundy-bright) 55%, transparent);
   --shadow-handle: 0 6px 22px -4px color-mix(in srgb, var(--color-burgundy-bright) 90%, transparent);
+  --shadow-admin:
+    0 1px 2px color-mix(in srgb, var(--color-burgundy-dark) 6%, transparent),
+    0 12px 32px -14px color-mix(in srgb, var(--color-burgundy-dark) 22%, transparent);
+  --shadow-admin-lift:
+    0 2px 4px color-mix(in srgb, var(--color-burgundy-dark) 8%, transparent),
+    0 22px 44px -18px color-mix(in srgb, var(--color-burgundy) 35%, transparent);
+  --shadow-sidebar: 0 24px 60px -20px color-mix(in srgb, var(--color-burgundy-dark) 70%, transparent);
   --shadow-shell:
     0 0 140px 10px color-mix(in srgb, var(--color-burgundy-bright) 30%, transparent),
     0 0 0 1px color-mix(in srgb, var(--color-white) 6%, transparent);
@@ -37,6 +47,7 @@
   --animate-shimmer: shimmer 1.6s ease-in-out infinite;
   --animate-border-spin: border-spin 6s linear infinite;
   --animate-fade-up: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-accent-slide: accent-slide 3.5s ease-in-out infinite;
 
   @keyframes ken-burns {
     0%,
@@ -140,6 +151,15 @@
     }
   }
 
+  @keyframes accent-slide {
+    0% {
+      transform: translateX(-60%);
+    }
+    100% {
+      transform: translateX(160%);
+    }
+  }
+
   @keyframes fade-up {
     from {
       opacity: 0;
@@ -174,6 +194,13 @@ html:has([data-scroll-lock]) body {
   height: 100%;
   overflow: hidden;
   overscroll-behavior: none;
+}
+
+/* Admin panel pages scroll normally and use the light theme. */
+body:has([data-admin-root]) {
+  background-color: var(--color-soft-white);
+  color: var(--color-wine-ink);
+  color-scheme: light;
 }
 
 body {
@@ -359,4 +386,49 @@ body {
       animation: none;
     }
   }
+}
+
+/* ---------- Admin surfaces ---------- */
+
+@utility bg-admin-page {
+  background-color: var(--color-soft-white);
+  background-image:
+    radial-gradient(
+      60% 40% at 100% 0%,
+      color-mix(in srgb, var(--color-burgundy) 7%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      50% 35% at 0% 100%,
+      color-mix(in srgb, var(--color-burgundy-bright) 5%, transparent),
+      transparent 70%
+    );
+  background-attachment: fixed;
+}
+
+@utility bg-sidebar {
+  background-image: linear-gradient(
+    180deg,
+    var(--color-burgundy) 0%,
+    var(--color-burgundy-dark) 100%
+  );
+}
+
+@utility bg-admin-shimmer {
+  background-image: linear-gradient(
+    100deg,
+    transparent 20%,
+    color-mix(in srgb, var(--color-white) 70%, transparent) 50%,
+    transparent 80%
+  );
+}
+
+@utility bg-accent-line {
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-burgundy-bright),
+    var(--color-blush),
+    transparent
+  );
 }
