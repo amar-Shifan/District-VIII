@@ -243,8 +243,8 @@ body {
 @utility bg-landing-overlay {
   background-image: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--color-burgundy) 82%, transparent) 0%,
-    color-mix(in srgb, var(--color-burgundy-dark) 76%, transparent) 48%,
+    color-mix(in srgb, var(--color-burgundy) 66%, transparent) 0%,
+    color-mix(in srgb, var(--color-burgundy-dark) 62%, transparent) 48%,
     color-mix(in srgb, var(--color-ink) 90%, transparent) 82%,
     var(--color-ink) 100%
   );

@@ -11,6 +11,8 @@ const imageHosts = (process.env.NEXT_PUBLIC_IMAGE_HOSTS ?? "images.unsplash.com"
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  // Lets phones on the same Wi-Fi load the dev server via the computer's LAN IP.
+  allowedDevOrigins: ["192.168.*.*", "10.*.*.*", "172.*.*.*"],
   partialPrefetching: true,
   images: {
     remotePatterns: imageHosts.map((hostname) => ({ protocol: "https", hostname })),

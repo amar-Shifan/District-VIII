@@ -67,3 +67,16 @@ export function parseOrigins(value: string): string[] {
     .map((origin) => origin.trim())
     .filter(Boolean);
 }
+
+/** Private-network origins (phones on the same Wi-Fi), allowed outside production only. */
+export const LAN_ORIGIN =
+  /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})(:\d+)?$/;
+
+export function corsOrigins(
+  value: string,
+  nodeEnv: EnvironmentVariables['NODE_ENV'],
+): (string | RegExp)[] {
+  const origins: (string | RegExp)[] = parseOrigins(value);
+  if (nodeEnv !== 'production') origins.push(LAN_ORIGIN);
+  return origins;
+}

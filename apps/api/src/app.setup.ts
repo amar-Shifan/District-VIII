@@ -6,7 +6,7 @@ import helmet from 'helmet';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import {
   type EnvironmentVariables,
-  parseOrigins,
+  corsOrigins,
 } from './config/env.validation';
 import { SocketIoAdapter } from './realtime/socket-io.adapter';
 
@@ -14,7 +14,10 @@ import { SocketIoAdapter } from './realtime/socket-io.adapter';
 export function configureApp(app: NestExpressApplication): void {
   const config =
     app.get<ConfigService<EnvironmentVariables, true>>(ConfigService);
-  const origins = parseOrigins(config.get('CORS_ORIGINS', { infer: true }));
+  const origins = corsOrigins(
+    config.get('CORS_ORIGINS', { infer: true }),
+    config.get('NODE_ENV', { infer: true }),
+  );
 
   app.set(
     'trust proxy',

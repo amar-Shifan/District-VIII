@@ -6,7 +6,7 @@ import type { Server, ServerOptions } from 'socket.io';
 export class SocketIoAdapter extends IoAdapter {
   constructor(
     app: INestApplicationContext,
-    private readonly origins: string[],
+    private readonly origins: (string | RegExp)[],
   ) {
     super(app);
   }
