@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { PlaceholderScreen } from "@/components/PlaceholderScreen";
+import { MyBookingScreen } from "@/features/my-booking/MyBookingScreen";
 
 export const metadata: Metadata = {
   title: "My Booking",
 };
 
 export default function MyBookingPage() {
-  return <PlaceholderScreen eyebrow="Your session" title="My Booking" description="Booking details are coming soon." />;
+  return <MyBookingScreen />;
 }

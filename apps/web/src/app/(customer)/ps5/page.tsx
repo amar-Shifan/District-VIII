@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { PlaceholderScreen } from "@/components/PlaceholderScreen";
+import { UnitBookingScreen } from "@/features/booking/UnitBookingScreen";
 
 export const metadata: Metadata = {
   title: "PS5 Stations",
 };
 
 export default function Ps5Page() {
-  return <PlaceholderScreen eyebrow="Book a console" title="PS5 Stations" description="Console booking is coming soon." />;
+  return <UnitBookingScreen type="ps5" />;
 }

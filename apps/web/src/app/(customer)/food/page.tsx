@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { PlaceholderScreen } from "@/components/PlaceholderScreen";
+import { FoodScreen } from "@/features/food/FoodScreen";
 
 export const metadata: Metadata = {
   title: "Food & Drinks",
 };
 
 export default function FoodPage() {
-  return <PlaceholderScreen eyebrow="Kitchen" title="Food & Drinks" description="The full menu is coming soon." />;
+  return <FoodScreen />;
 }
