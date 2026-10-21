@@ -7,14 +7,12 @@
   ],
   "scripts": {
     "postinstall": "npm run build -w @district-viii/shared",
-    "dev": "npm run build -w @district-viii/shared && concurrently -k -n shared,api,web -c gray,red,magenta \"npm run dev -w @district-viii/shared\" \"npm run dev -w @district-viii/api\" \"npm run dev -w @district-viii/web\"",
-    "dev:web": "npm run dev -w @district-viii/web",
-    "dev:api": "npm run dev -w @district-viii/api",
-    "build": "npm run build -w @district-viii/shared && npm run build -w @district-viii/api && npm run build -w @district-viii/web",
-    "lint": "npm run lint -w @district-viii/shared && npm run lint -w @district-viii/api && npm run lint -w @district-viii/web",
-    "test": "npm run test -w @district-viii/api && npm run test:e2e -w @district-viii/api",
-    "seed": "npm run seed -w @district-viii/api",
-    "start": "concurrently -k -n api,web \"npm run start:prod -w @district-viii/api\" \"npm run start -w @district-viii/web\""
+    "dev": "npm run build -w @district-viii/shared && concurrently -k -n shared,web -c gray,magenta \"npm run dev -w @district-viii/shared\" \"npm run dev -w @district-viii/web\"",
+    "build": "npm run build -w @district-viii/web",
+    "start": "npm run start -w @district-viii/web",
+    "lint": "npm run lint -w @district-viii/shared && npm run lint -w @district-viii/web",
+    "test": "npm run test -w @district-viii/web",
+    "seed": "npm run seed -w @district-viii/web"
   },
   "engines": {
     "node": ">=20.9"

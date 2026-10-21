@@ -56,7 +56,7 @@ export function Sidebar() {
   const pending = stats.data?.pendingCount ?? 0;
 
   const logout = async () => {
-    await fetch("/api/admin/logout", { method: "POST" });
+    await fetch("/api/auth/logout", { method: "POST" });
     router.replace("/admin/login");
     router.refresh();
   };

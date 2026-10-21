@@ -1,3 +1,3 @@
 # @district-viii/web
 
-The District VIII customer app (Next.js). See the [root README](../../README.md) for setup, structure and API swapping.
+The whole District VIII product: customer app, admin panel and the `/api` backend (Next.js). See the [root README](../../README.md) for setup, deployment and the API overview.

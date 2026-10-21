@@ -1,54 +1,60 @@
 "use client";
 
-import {
-  type BookingCreatedPayload,
-  formatShortDate,
-  formatSlotRange,
-  SOCKET_EVENTS,
-} from "@district-viii/shared";
-import { useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { formatShortDate, formatSlotRange } from "@district-viii/shared";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import { adminApi, adminKeys } from "@/lib/admin-api";
-import { createAdminSocket } from "@/lib/socket";
+import { LIVE_POLL_MS } from "@/lib/config";
 import { useToast } from "./Toaster";
 
 /**
- * Connects the admin socket (joins the admin room with a short-lived token),
- * toasts new booking requests and refreshes admin data on every change.
+ * Live admin updates without sockets: polls /api/admin/live every few
+ * seconds. New pending requests show as toasts; any change refreshes the
+ * dashboard, bookings, units, availability and blocked slots.
  */
 export function AdminRealtime() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const since = useRef<string | undefined>(undefined);
+  const lastRevision = useRef<number | null>(null);
+
+  const live = useQuery({
+    queryKey: [...adminKeys.all, "live"],
+    queryFn: () => adminApi.live(since.current),
+    refetchInterval: LIVE_POLL_MS,
+    refetchIntervalInBackground: true,
+    staleTime: 0,
+  });
 
   useEffect(() => {
-    const socket = createAdminSocket(async () => (await adminApi.socketToken()).token);
-    const refresh = (...keys: (readonly string[])[]) => {
-      for (const queryKey of keys) void queryClient.invalidateQueries({ queryKey });
-    };
-
-    const onCreated = (booking: BookingCreatedPayload) => {
-      if (booking.status === "pending") {
+    const data = live.data;
+    if (!data) return;
+    // The first poll only sets the baseline; later polls report what is new since then.
+    if (since.current !== undefined) {
+      for (const booking of data.newRequests) {
         toast({
           title: `New request · ${booking.unitName}`,
           description: `${booking.customerName}, ${formatShortDate(booking.businessDate)} · ${formatSlotRange(booking.startHour, booking.durationHours)}`,
         });
       }
-      refresh(adminKeys.stats, adminKeys.bookingsAll, adminKeys.charts, adminKeys.availabilityAll);
-    };
-    const onBookingUpdated = () =>
-      refresh(adminKeys.stats, adminKeys.bookingsAll, adminKeys.charts, adminKeys.availabilityAll);
-    const onUnitUpdated = () => refresh(adminKeys.units, adminKeys.stats, adminKeys.availabilityAll);
-    const onAvailability = () => refresh(adminKeys.availabilityAll, adminKeys.blockedSlotsAll);
+    }
+    since.current = data.serverTime;
 
-    socket.on(SOCKET_EVENTS.bookingCreated, onCreated);
-    socket.on(SOCKET_EVENTS.bookingUpdated, onBookingUpdated);
-    socket.on(SOCKET_EVENTS.unitUpdated, onUnitUpdated);
-    socket.on(SOCKET_EVENTS.availabilityChanged, onAvailability);
-    return () => {
-      socket.removeAllListeners();
-      socket.disconnect();
-    };
-  }, [queryClient, toast]);
+    if (lastRevision.current !== null && lastRevision.current !== data.revision) {
+      for (const queryKey of [
+        adminKeys.stats,
+        adminKeys.bookingsAll,
+        adminKeys.charts,
+        adminKeys.units,
+        adminKeys.availabilityAll,
+        adminKeys.blockedSlotsAll,
+        adminKeys.food,
+      ]) {
+        void queryClient.invalidateQueries({ queryKey });
+      }
+    }
+    lastRevision.current = data.revision;
+  }, [live.data, queryClient, toast]);
 
   return null;
 }

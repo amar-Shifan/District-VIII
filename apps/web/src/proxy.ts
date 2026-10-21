@@ -1,14 +1,26 @@
+import { jwtVerify } from "jose";
 import { type NextRequest, NextResponse } from "next/server";
-import { ADMIN_COOKIE, isTokenUsable } from "@/lib/admin-session";
+import { ADMIN_COOKIE } from "@/lib/admin-session";
+
+async function hasValidSession(token: string | undefined): Promise<boolean> {
+  const secret = process.env.JWT_SECRET;
+  if (!token || !secret) return false;
+  try {
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(secret), { algorithms: ["HS256"] });
+    return payload.role === "admin";
+  } catch {
+    return false;
+  }
+}
 
 /**
- * Optimistic admin route protection: no unexpired session cookie means a
- * redirect to the login page. The API still verifies every request.
+ * Admin route protection: no valid session cookie means a redirect to the
+ * login page. Every /api admin route also checks the session itself.
  */
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const token = request.cookies.get(ADMIN_COOKIE)?.value;
-  const signedIn = isTokenUsable(token);
+  const signedIn = await hasValidSession(token);
   const onLogin = pathname === "/admin/login";
 
   if (!signedIn && !onLogin) {

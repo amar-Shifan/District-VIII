@@ -1,6 +1,7 @@
 import type { IsoDate, UnitType } from "@district-viii/shared";
 
 export const queryKeys = {
+  live: ["live"] as const,
   unitsSummary: ["units", "summary"] as const,
   availabilityAll: ["availability"] as const,
   availability: (type: UnitType, date: IsoDate) => ["availability", type, date] as const,

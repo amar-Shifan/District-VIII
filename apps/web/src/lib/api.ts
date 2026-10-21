@@ -10,7 +10,7 @@ import type {
   UnitsSummaryDto,
 } from "@district-viii/shared";
 import { ApiError, isApiErrorBody } from "./api-error";
-import { API_URL, USE_MOCK } from "./config";
+import { API_BASE, USE_MOCK } from "./config";
 import { mockApi } from "./mock-data";
 
 /**
@@ -23,7 +23,7 @@ export { ApiError } from "./api-error";
 export async function request<T>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(`${API_URL}${path}`, {
+    response = await fetch(`${API_BASE}${path}`, {
       method: init?.method ?? "GET",
       headers: {
         Accept: "application/json",
@@ -78,6 +78,10 @@ export function getFoodCategories(): Promise<FoodCategoryDto[]> {
 
 export function getPublicSettings(): Promise<PublicSettingsDto> {
   return USE_MOCK ? mockApi.getPublicSettings() : request("/settings/public");
+}
+
+export function getLiveRevision(): Promise<{ revision: number }> {
+  return request("/live");
 }
 
 /** Whether the remembered customer has a booking awaiting approval. */

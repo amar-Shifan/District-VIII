@@ -14,6 +14,26 @@ const nextConfig: NextConfig = {
   // Lets phones on the same Wi-Fi load the dev server via the computer's LAN IP.
   allowedDevOrigins: ["192.168.*.*", "10.*.*.*", "172.*.*.*"],
   partialPrefetching: true,
+  // Mongoose loads drivers dynamically; keep it out of the server bundle.
+  serverExternalPackages: ["mongoose"],
+  // The security headers helmet used to add on the standalone API.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+          { key: "X-DNS-Prefetch-Control", value: "off" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        ],
+      },
+      { source: "/api/:path*", headers: [{ key: "Cache-Control", value: "no-store" }] },
+    ];
+  },
   images: {
     remotePatterns: imageHosts.map((hostname) => ({ protocol: "https", hostname })),
   },

@@ -1,41 +1,34 @@
 "use client";
 
-import { SOCKET_EVENTS } from "@district-viii/shared";
-import { useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { USE_MOCK } from "@/lib/config";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
+import { getLiveRevision } from "@/lib/api";
+import { LIVE_POLL_MS, USE_MOCK } from "@/lib/config";
 import { queryKeys } from "@/lib/query-keys";
-import { getPublicSocket } from "@/lib/socket";
 
 /**
- * Keeps customer screens live: any availability, unit or booking event from
- * the API invalidates the affected queries, which refetch in the background.
- * Polling (refetchInterval) remains as a fallback when the socket is down.
+ * Keeps customer screens live without sockets: polls the API's change counter
+ * every few seconds (a single tiny read) and, when it moves, refreshes
+ * availability, the Home summary and the customer's bookings.
  */
 export function useLiveUpdates(): void {
   const queryClient = useQueryClient();
+  const live = useQuery({
+    queryKey: queryKeys.live,
+    queryFn: getLiveRevision,
+    refetchInterval: LIVE_POLL_MS,
+    enabled: !USE_MOCK,
+  });
+  const lastRevision = useRef<number | null>(null);
+  const revision = live.data?.revision;
 
   useEffect(() => {
-    if (USE_MOCK) return;
-    const socket = getPublicSocket();
-    const refreshAvailability = () => {
+    if (revision === undefined) return;
+    if (lastRevision.current !== null && lastRevision.current !== revision) {
       void queryClient.invalidateQueries({ queryKey: queryKeys.unitsSummary });
       void queryClient.invalidateQueries({ queryKey: queryKeys.availabilityAll });
-    };
-    const refreshBookings = () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.myBookingsAll });
-    };
-
-    socket.on(SOCKET_EVENTS.availabilityChanged, refreshAvailability);
-    socket.on(SOCKET_EVENTS.unitUpdated, refreshAvailability);
-    socket.on(SOCKET_EVENTS.bookingUpdated, refreshBookings);
-    // Catch up on anything missed while disconnected.
-    socket.on("connect", refreshAvailability);
-    return () => {
-      socket.off(SOCKET_EVENTS.availabilityChanged, refreshAvailability);
-      socket.off(SOCKET_EVENTS.unitUpdated, refreshAvailability);
-      socket.off(SOCKET_EVENTS.bookingUpdated, refreshBookings);
-      socket.off("connect", refreshAvailability);
-    };
-  }, [queryClient]);
+    }
+    lastRevision.current = revision;
+  }, [revision, queryClient]);
 }

@@ -16,7 +16,6 @@ import type {
   Paginated,
   PeakHourPoint,
   SettingsDto,
-  SocketTokenResponse,
   StatusSplitPoint,
   UnitDto,
   UnitType,
@@ -29,10 +28,16 @@ import type {
 import { ADMIN_REQUEST_HEADER } from "./admin-session";
 import { ApiError, isApiErrorBody } from "./api-error";
 
-/** Admin calls go through the Next.js proxy, which adds the token from the httpOnly cookie. */
+export interface AdminLiveResponse {
+  revision: number;
+  newRequests: BookingDto[];
+  serverTime: string;
+}
+
+/** Admin calls go to this app's /api routes; the httpOnly session cookie travels automatically. */
 async function adminRequest<T>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
   const method = init?.method ?? "GET";
-  const response = await fetch(`/api/admin/proxy${path}`, {
+  const response = await fetch(`/api${path}`, {
     method,
     headers: {
       Accept: "application/json",
@@ -44,8 +49,9 @@ async function adminRequest<T>(path: string, init?: { method?: string; body?: un
   });
 
   if (response.status === 401) {
-    // Session expired or revoked: back to the login page, then here again.
+    // Session expired or revoked: clear the cookie and go back to the login page, then here again.
     // A full page load (not router.push) so proxy.ts re-checks the cleared cookie.
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
     const login = new URL("/admin/login", window.location.origin);
     login.searchParams.set("next", window.location.pathname);
     window.location.replace(login.href);
@@ -71,7 +77,7 @@ function query(params: Record<string, string | number | undefined>): string {
 
 export const adminApi = {
   me: () => adminRequest<AdminDto>("/auth/me"),
-  socketToken: () => adminRequest<SocketTokenResponse>("/auth/socket-token"),
+  live: (since?: string) => adminRequest<AdminLiveResponse>(`/admin/live${query({ since })}`),
 
   // Dashboard
   stats: () => adminRequest<DashboardStatsDto>("/admin/dashboard/stats"),
