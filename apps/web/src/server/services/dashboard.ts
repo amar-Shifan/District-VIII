@@ -63,7 +63,7 @@ export async function dashboardStats(): Promise<DashboardStatsDto> {
               { $match: { businessDate: slot.businessDate, startHour: slot.startHour, status: "approved" } },
               { $group: { _id: "$unitId" } },
             ]
-          : [{ $limit: 0 }],
+          : [{ $match: { _id: null } }], // closed: no slot is running, so nothing is in use
       },
     },
   ]).exec();
