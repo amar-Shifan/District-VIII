@@ -11,6 +11,7 @@ import type {
   CreateBookingInput,
   CreateUnitInput,
   DashboardStatsDto,
+  DailyEstimatedSalesDto,
   FoodItemDto,
   IsoDate,
   Paginated,
@@ -32,6 +33,35 @@ export interface AdminLiveResponse {
   revision: number;
   newRequests: BookingDto[];
   serverTime: string;
+}
+
+export interface AdminNotificationDto {
+  id: string;
+  title: string;
+  message: string;
+  bookingId: string;
+  booking: {
+    customerName: string;
+    unitName: string;
+    unitType: UnitType;
+    businessDate: string;
+    startHour: number;
+    durationHours: number;
+    status: string;
+  };
+  createdAt: string;
+  isRead: boolean;
+}
+
+export interface AdminNotificationsResponse {
+  items: AdminNotificationDto[];
+  unreadCount: number;
+}
+
+export interface AdminPushSubscriptionInput {
+  endpoint: string;
+  expirationTime: number | null;
+  keys: { p256dh: string; auth: string };
 }
 
 /** Admin calls go to this app's /api routes; the httpOnly session cookie travels automatically. */
@@ -78,9 +108,20 @@ function query(params: Record<string, string | number | undefined>): string {
 export const adminApi = {
   me: () => adminRequest<AdminDto>("/auth/me"),
   live: (since?: string) => adminRequest<AdminLiveResponse>(`/admin/live${query({ since })}`),
+  notifications: () => adminRequest<AdminNotificationsResponse>("/admin/notifications"),
+  markNotificationRead: (id: string) =>
+    adminRequest<void>("/admin/notifications", { method: "PATCH", body: { id } }),
+  markAllNotificationsRead: () =>
+    adminRequest<void>("/admin/notifications", { method: "PATCH", body: { all: true } }),
+  pushConfig: () => adminRequest<{ vapidPublicKey: string | null }>("/admin/push-subscriptions"),
+  savePushSubscription: (subscription: AdminPushSubscriptionInput) =>
+    adminRequest<void>("/admin/push-subscriptions", { method: "POST", body: subscription }),
+  removePushSubscription: (endpoint: string) =>
+    adminRequest<void>("/admin/push-subscriptions", { method: "DELETE", body: { endpoint } }),
 
   // Dashboard
   stats: () => adminRequest<DashboardStatsDto>("/admin/dashboard/stats"),
+  estimatedSalesLastSevenDays: () => adminRequest<DailyEstimatedSalesDto[]>("/admin/dashboard/estimated-sales"),
   bookingsPerDay: (days = 7) => adminRequest<BookingsPerDayPoint[]>(`/admin/dashboard/bookings-per-day?days=${days}`),
   peakHours: (days = 30) => adminRequest<PeakHourPoint[]>(`/admin/dashboard/peak-hours?days=${days}`),
   usageByType: (days = 30) => adminRequest<UsageByTypePoint[]>(`/admin/dashboard/usage-by-type?days=${days}`),
@@ -133,6 +174,8 @@ export const adminApi = {
 export const adminKeys = {
   all: ["admin"] as const,
   me: ["admin", "me"] as const,
+  notifications: ["admin", "notifications"] as const,
+  pushConfig: ["admin", "push-config"] as const,
   stats: ["admin", "dashboard", "stats"] as const,
   charts: ["admin", "dashboard", "charts"] as const,
   bookings: (filters: BookingListQuery) => ["admin", "bookings", filters] as const,

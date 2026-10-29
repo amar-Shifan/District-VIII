@@ -2,6 +2,7 @@
 
 import {
   type BookingsPerDayPoint,
+  type DailyEstimatedSalesDto,
   formatHour,
   formatShortDate,
   type PeakHourPoint,
@@ -52,6 +53,64 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
 }
 
 const AXIS = { fontSize: 11, fontWeight: 600 } as const;
+const INR = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 });
+const SALES_DAY = new Intl.DateTimeFormat("en-IN", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+const SALES_DATE = new Intl.DateTimeFormat("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+
+function SalesTooltip({ active, point }: { active?: boolean; point?: DailyEstimatedSalesDto }) {
+  if (!active || !point) return null;
+  const date = new Date(`${point.date}T00:00:00Z`);
+  return (
+    <div className="rounded-2xl border border-burgundy/15 bg-white px-3.5 py-2.5 text-xs text-wine-ink shadow-admin-lift">
+      <p className="mb-1 font-bold">{SALES_DATE.format(date)}</p>
+      <p className="font-semibold text-wine-ink/60">Approved bookings: {point.bookingCount}</p>
+      {point.missingEstimateCount > 0 ? (
+        <p className="mt-1 font-bold text-burgundy">Incomplete · {point.missingEstimateCount} missing estimate{point.missingEstimateCount === 1 ? "" : "s"}</p>
+      ) : (
+        <p className="mt-1 font-bold">Estimated value: {INR.format(point.estimatedBookingValue ?? 0)}</p>
+      )}
+    </div>
+  );
+}
+
+export function EstimatedSalesBarChart({ data }: { data: DailyEstimatedSalesDto[] }) {
+  const colors = useThemeColors();
+  const animate = !useReducedMotion();
+  const rows = data.map((point) => ({
+    ...point,
+    label: SALES_DAY.format(new Date(`${point.date}T00:00:00Z`)),
+    value: point.missingEstimateCount > 0 ? null : point.estimatedBookingValue,
+  }));
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart data={rows} margin={{ top: 12, right: 12, bottom: 0, left: 8 }}>
+        <defs>
+          <linearGradient id="estimatedSalesBar" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={colors.burgundyBright} />
+            <stop offset="100%" stopColor={colors.burgundyDark} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid vertical={false} stroke={colors.burgundy} strokeOpacity={0.08} />
+        <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ ...AXIS, fill: colors.wineInk, fillOpacity: 0.55 }} />
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          width={76}
+          tickFormatter={(value: number) => INR.format(value)}
+          tick={{ ...AXIS, fontSize: 10, fill: colors.wineInk, fillOpacity: 0.45 }}
+        />
+        <Tooltip
+          content={(props) => {
+            const point = props.payload?.[0]?.payload as DailyEstimatedSalesDto | undefined;
+            return <SalesTooltip active={props.active} point={point} />;
+          }}
+          cursor={{ fill: colors.burgundy, fillOpacity: 0.06 }}
+        />
+        <Bar dataKey="value" name="estimated sales" fill="url(#estimatedSalesBar)" radius={[8, 8, 0, 0]} maxBarSize={40} isAnimationActive={animate} animationDuration={850} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
 
 export function BookingsPerDayChart({ data }: { data: BookingsPerDayPoint[] }) {
   const colors = useThemeColors();

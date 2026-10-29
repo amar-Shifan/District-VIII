@@ -8,7 +8,10 @@ import {
   businessDateOf,
   currentSlot,
   type DashboardStatsDto,
+  type DailyEstimatedSalesDto,
   HOUR_MS,
+  type IsoDate,
+  ARENA_TIME_ZONE,
   type PeakHourPoint,
   SLOT_HOLDING_STATUSES,
   slotHours,
@@ -24,7 +27,7 @@ import { getSettings } from "./settings";
 import { effectiveStatus, findActiveUnits } from "./units";
 
 interface StatsFacet {
-  today: { _id: BookingStatus; count: number }[];
+  today: { _id: BookingStatus; count: number; estimatedBookingValue: number; unpricedApproved: number }[];
   pending: { count: number }[];
   inUse: { _id: Types.ObjectId }[];
 }
@@ -32,6 +35,62 @@ interface StatsFacet {
 async function range(days: number): Promise<{ today: string; from: string }> {
   const today = businessDateOf(now(), await getSettings());
   return { today, from: addDays(today, -(days - 1)) };
+}
+
+function arenaCalendarDate(instant: Date): IsoDate {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: ARENA_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(instant);
+  const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}` as IsoDate;
+}
+
+function arenaMidnight(date: IsoDate): Date {
+  return new Date(`${date}T00:00:00+05:30`);
+}
+
+/** Approved saved estimates by calendar date in the arena timezone; no disposable summary collection is needed. */
+export async function estimatedSalesLastSevenDays(): Promise<DailyEstimatedSalesDto[]> {
+  const today = arenaCalendarDate(now());
+  const from = addDays(today, -6);
+  const throughTomorrow = addDays(today, 1);
+  const rows = await BookingModel.aggregate<{
+    _id: IsoDate;
+    bookingCount: number;
+    estimatedBookingValue: number;
+    missingEstimateCount: number;
+  }>([
+    {
+      $match: {
+        status: "approved",
+        startsAt: { $gte: arenaMidnight(from), $lt: arenaMidnight(throughTomorrow) },
+      },
+    },
+    {
+      $group: {
+        _id: { $dateToString: { format: "%Y-%m-%d", date: "$startsAt", timezone: ARENA_TIME_ZONE } },
+        bookingCount: { $sum: 1 },
+        estimatedBookingValue: { $sum: { $ifNull: ["$estimatedAmount", 0] } },
+        missingEstimateCount: {
+          $sum: { $cond: [{ $eq: [{ $ifNull: ["$estimatedAmount", null] }, null] }, 1, 0] },
+        },
+      },
+    },
+  ]).exec();
+  const byDate = new Map(rows.map((row) => [row._id, row]));
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = addDays(from, index);
+    const row = byDate.get(date);
+    return {
+      date,
+      estimatedBookingValue: !row ? 0 : row.missingEstimateCount > 0 ? null : row.estimatedBookingValue,
+      bookingCount: row?.bookingCount ?? 0,
+      missingEstimateCount: row?.missingEstimateCount ?? 0,
+    };
+  });
 }
 
 function countBy<TKey>(pipeline: PipelineStage[]): Promise<{ _id: TKey; count: number }[]> {
@@ -47,7 +106,29 @@ export async function dashboardStats(): Promise<DashboardStatsDto> {
   const [facet] = await BookingModel.aggregate<StatsFacet>([
     {
       $facet: {
-        today: [{ $match: { businessDate: today } }, { $group: { _id: "$status", count: { $sum: 1 } } }],
+        today: [
+          { $match: { businessDate: today } },
+          {
+            $group: {
+              _id: "$status",
+              count: { $sum: 1 },
+              estimatedBookingValue: {
+                $sum: {
+                  $cond: [{ $eq: ["$status", "approved"] }, { $ifNull: ["$estimatedAmount", 0] }, 0],
+                },
+              },
+              unpricedApproved: {
+                $sum: {
+                  $cond: [
+                    { $and: [{ $eq: ["$status", "approved"] }, { $eq: [{ $ifNull: ["$estimatedAmount", null] }, null] }] },
+                    1,
+                    0,
+                  ],
+                },
+              },
+            },
+          },
+        ],
         // Pending requests whose slot hasn't finished yet still need a decision.
         pending: [
           {
@@ -77,8 +158,14 @@ export async function dashboardStats(): Promise<DashboardStatsDto> {
     todayBookings: todayCount("pending") + todayCount("approved"),
     pendingCount: facet?.pending[0]?.count ?? 0,
     approvedToday: todayCount("approved"),
+    unpricedApprovedToday: facet?.today.find((row) => row._id === "approved")?.unpricedApproved ?? 0,
     unitsInUse: units.filter((unit) => inUse.has(String(unit._id))).length,
     totalUnits: units.length,
+    estimatedBookingValueToday: (() => {
+      const approved = facet?.today.find((row) => row._id === "approved");
+      if (approved?.unpricedApproved) return null;
+      return approved?.estimatedBookingValue ?? 0;
+    })(),
   };
 }
 

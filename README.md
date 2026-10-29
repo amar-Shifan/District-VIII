@@ -56,12 +56,21 @@ The tests use `mongodb-memory-server`, which downloads a `mongod` binary on firs
    | `JWT_SECRET` | 32+ random characters |
    | `JWT_EXPIRES_IN` | `12h` (optional) |
    | `NEXT_PUBLIC_IMAGE_HOSTS` | `images.unsplash.com` (optional) |
+   | `VAPID_PUBLIC_KEY` | Web Push public key (required for device push) |
+   | `VAPID_PRIVATE_KEY` | Matching Web Push private key; keep secret |
+   | `VAPID_SUBJECT` | Contact URI such as `mailto:you@example.com` |
 
 4. **Deploy.** Then create the admin account and demo data once, from your computer:
    - Temporarily set `MONGODB_URI` in `apps/web/.env.local` to the Atlas string.
    - Change `SEED_ADMIN_PASSWORD`, then run `npm run seed`.
    - Switch `MONGODB_URI` back. The seed **deletes** everything in that database, so only run it before real bookings exist.
 5. Every push to the connected branch redeploys automatically.
+
+### Admin device notifications
+
+Generate one VAPID key pair from the repository root with `npx web-push generate-vapid-keys`. Copy the public and private keys into `apps/web/.env.local`; set the same values in Vercel under **Settings â†’ Environment Variables** for each environment you deploy. Set `VAPID_SUBJECT` to a contact URI such as `mailto:you@example.com`. Keep the pair stable and never commit the private key. Redeploy after changing Vercel environment variables. Push delivery is disabled when these values are absent.
+
+Admins can enable device push and notification sound from the bell panel after signing in. Permission is requested only after enabling push. The site must be served from HTTPS (localhost is also treated as secure by browsers). Push delivery depends on browser and operating-system support, notification permission, and the browser's push service. On iPhone and iPad, Web Push generally requires a supported iOS/iPadOS version and the site added to the Home Screen. The browser may need to be opened once after installation before the service worker is active. Logging out removes the current browser's subscription; other devices remain subscribed.
 
 ## Environment variables (`apps/web/.env.local`)
 
@@ -73,6 +82,9 @@ The tests use `mongodb-memory-server`, which downloads a `mongod` binary on firs
 | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_NAME` | — | Admin created by `npm run seed` |
 | `NEXT_PUBLIC_USE_MOCK` | `false` | `true` runs the customer screens on an in-browser mock (no database) |
 | `NEXT_PUBLIC_IMAGE_HOSTS` | `images.unsplash.com` | Hosts `next/image` optimizes; other hosts still render, unoptimized |
+| `VAPID_PUBLIC_KEY` | â€” | Public Web Push application-server key |
+| `VAPID_PRIVATE_KEY` | â€” | Secret Web Push application-server key; do not commit or expose to the browser |
+| `VAPID_SUBJECT` | â€” | Contact URI included in VAPID requests, e.g. `mailto:you@example.com` |
 
 ## Folder structure
 

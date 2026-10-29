@@ -22,6 +22,7 @@ import { badRequest, conflict, forbidden, isDuplicateKeyError, notFound } from "
 import { bumpLive } from "../live";
 import { type Booking, BookingModel, type BookingRecord, BlockedSlotModel } from "../models";
 import { getSettings } from "./settings";
+import { recordAdminBookingNotification, scheduleNewBookingNotification, updateBookingNotificationStatus } from "./admin-notifications";
 import { effectiveStatus, getUnit, unitNames } from "./units";
 
 export const SLOT_TAKEN_MESSAGE = "Sorry, someone just requested this slot. Please pick another time.";
@@ -48,6 +49,8 @@ export function toBookingDto(booking: BookingRecord, unitName: string): BookingD
     endsAt: new Date(booking.startsAt.getTime() + booking.durationHours * HOUR_MS).toISOString(),
     customerName: booking.customerName,
     customerPhone: booking.customerPhone,
+    pricePerHour: booking.pricePerHour ?? null,
+    estimatedAmount: booking.estimatedAmount ?? null,
     status: booking.status,
     source: booking.source,
     rejectionReason: booking.rejectionReason ?? null,
@@ -83,6 +86,8 @@ export async function createBooking(input: CreateBookingInput, source: BookingSo
   }
 
   const startsAt = slotStart(input.businessDate, input.startHour, settings);
+  const pricePerHour = unit.type === "ps5" ? settings.ps5PricePerHour : settings.poolPricePerHour;
+  const estimatedAmount = pricePerHour === null ? null : Number((pricePerHour * settings.slotDurationHours).toFixed(2));
   if (isSlotPast(startsAt, at)) throw badRequest("This slot has already started");
   if (status === "busy" && unit.busyUntil && unit.busyUntil > startsAt) {
     throw conflict(`${unit.name} is in use at that time`);
@@ -105,6 +110,8 @@ export async function createBooking(input: CreateBookingInput, source: BookingSo
       startsAt,
       customerName: input.customerName,
       customerPhone: input.customerPhone,
+      pricePerHour,
+      estimatedAmount,
       status: source === "walk-in" ? "approved" : "pending",
       source,
       approvedAt: source === "walk-in" ? at : null,
@@ -117,6 +124,16 @@ export async function createBooking(input: CreateBookingInput, source: BookingSo
 
   const dto = toBookingDto(created, unit.name);
   console.log(`Booking ${dto.id} created (${source}) for ${maskPhone(dto.customerPhone)}`);
+  let notificationCreated = false;
+  try {
+    notificationCreated = await recordAdminBookingNotification(dto);
+  } catch (error) {
+    // The booking is already persisted; notification delivery must not make the customer retry it.
+    console.error(`Could not create admin notification for booking ${dto.id}`, error);
+  }
+  if (notificationCreated) {
+    scheduleNewBookingNotification(dto);
+  }
   await bumpLive();
   return dto;
 }
@@ -181,6 +198,7 @@ async function transition(
     throw conflict(`This booking is already ${existing.status}`);
   }
   const [dto] = await withNames([updated]);
+  await updateBookingNotificationStatus(id, updated.status);
   await bumpLive();
   return dto as BookingDto;
 }

@@ -1,0 +1,23 @@
+{
+  "name": "District VIII",
+  "short_name": "District VIII",
+  "description": "District VIII pool and PS5 gaming hub admin dashboard.",
+  "start_url": "/admin",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#190b0f",
+  "theme_color": "#190b0f",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

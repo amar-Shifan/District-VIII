@@ -14,8 +14,19 @@ import {
 import mongoose, { type Model, Schema, type Types } from "mongoose";
 
 /** Reuses compiled models across hot reloads and warm serverless invocations. */
-function defineModel<T>(name: string, schema: Schema<T>, collection?: string): Model<T> {
-  return (mongoose.models[name] as Model<T> | undefined) ?? mongoose.model<T>(name, schema, collection);
+export function defineModel<T>(name: string, schema: Schema<T>, collection?: string): Model<T> {
+  const existing = mongoose.models[name] as Model<T> | undefined;
+  if (existing) {
+    const existingPaths = Object.keys(existing.schema.paths).sort();
+    const currentPaths = Object.keys(schema.paths).sort();
+    if (existingPaths.length === currentPaths.length && existingPaths.every((path, index) => path === currentPaths[index])) {
+      return existing;
+    }
+    // Next dev hot reload can keep a compiled model after fields are added to
+    // the source schema. Mongoose then strips those fields from strict writes.
+    mongoose.deleteModel(name);
+  }
+  return mongoose.model<T>(name, schema, collection);
 }
 
 type Timestamps = { createdAt: Date; updatedAt: Date };
@@ -60,6 +71,9 @@ export interface Booking {
   customerName: string;
   /** Canonical 10-digit Indian mobile number. */
   customerPhone: string;
+  /** Rate and calculated estimate snapshotted at booking creation. Null if no rate was configured. */
+  pricePerHour: number | null;
+  estimatedAmount: number | null;
   status: BookingStatus;
   source: BookingSource;
   rejectionReason: string | null;
@@ -77,6 +91,8 @@ const BookingSchema = new Schema<Booking>(
     startsAt: { type: Date, required: true },
     customerName: { type: String, required: true, trim: true, minlength: 2, maxlength: 60 },
     customerPhone: { type: String, required: true, match: /^[6-9]\d{9}$/ },
+    pricePerHour: { type: Number, min: 0, max: 100_000, default: null },
+    estimatedAmount: { type: Number, min: 0, max: 400_000, default: null },
     status: { type: String, required: true, enum: BOOKING_STATUSES, default: "pending" },
     source: { type: String, required: true, enum: BOOKING_SOURCES, default: "online" },
     rejectionReason: { type: String, default: null, maxlength: 200 },
@@ -166,6 +182,8 @@ export const DEFAULT_SETTINGS = {
   closeHour: 4,
   slotDurationHours: 1,
   bookingWindowDays: 3,
+  ps5PricePerHour: null,
+  poolPricePerHour: null,
 } as const;
 
 export interface Settings {
@@ -175,6 +193,8 @@ export interface Settings {
   closeHour: number;
   slotDurationHours: number;
   bookingWindowDays: number;
+  ps5PricePerHour: number | null;
+  poolPricePerHour: number | null;
 }
 
 const SettingsSchema = new Schema<Settings>(
@@ -185,6 +205,8 @@ const SettingsSchema = new Schema<Settings>(
     closeHour: { type: Number, required: true, min: 0, max: 23, default: DEFAULT_SETTINGS.closeHour },
     slotDurationHours: { type: Number, required: true, min: 1, max: 4, default: DEFAULT_SETTINGS.slotDurationHours },
     bookingWindowDays: { type: Number, required: true, min: 1, max: 14, default: DEFAULT_SETTINGS.bookingWindowDays },
+    ps5PricePerHour: { type: Number, min: 0, max: 100_000, default: null },
+    poolPricePerHour: { type: Number, min: 0, max: 100_000, default: null },
   },
   { timestamps: true },
 );
@@ -226,6 +248,72 @@ const LiveStateSchema = new Schema<LiveState>(
 );
 export const LiveStateModel = defineModel("LiveState", LiveStateSchema);
 
+// ---------- Admin booking notifications ----------
+
+export interface AdminBookingNotification {
+  bookingId: Types.ObjectId;
+  title: string;
+  message: string;
+  booking: {
+    customerName: string;
+    unitName: string;
+    unitType: UnitType;
+    businessDate: string;
+    startHour: number;
+    durationHours: number;
+    status: BookingStatus;
+  };
+  readBy: Types.ObjectId[];
+}
+export type AdminBookingNotificationRecord = AdminBookingNotification & { _id: Types.ObjectId } & Timestamps;
+
+const AdminBookingNotificationSchema = new Schema<AdminBookingNotification>(
+  {
+    bookingId: { type: Schema.Types.ObjectId, ref: "Booking", required: true, unique: true },
+    title: { type: String, required: true, default: "New Booking Received" },
+    message: { type: String, required: true },
+    booking: {
+      customerName: { type: String, required: true },
+      unitName: { type: String, required: true },
+      unitType: { type: String, required: true, enum: UNIT_TYPES },
+      businessDate: { type: String, required: true },
+      startHour: { type: Number, required: true },
+      durationHours: { type: Number, required: true },
+      status: { type: String, required: true, enum: BOOKING_STATUSES },
+    },
+    readBy: { type: [Schema.Types.ObjectId], default: [] },
+  },
+  { timestamps: true },
+);
+AdminBookingNotificationSchema.index({ createdAt: -1 });
+AdminBookingNotificationSchema.index({ readBy: 1, createdAt: -1 });
+export const AdminBookingNotificationModel = defineModel("AdminBookingNotification", AdminBookingNotificationSchema);
+
+// ---------- Admin device push subscriptions ----------
+
+export interface AdminDeviceSubscription {
+  adminId: Types.ObjectId;
+  endpoint: string;
+  expirationTime: number | null;
+  keys: { p256dh: string; auth: string };
+}
+export type AdminDeviceSubscriptionRecord = AdminDeviceSubscription & { _id: Types.ObjectId } & Timestamps;
+
+const AdminDeviceSubscriptionSchema = new Schema<AdminDeviceSubscription>(
+  {
+    adminId: { type: Schema.Types.ObjectId, ref: "Admin", required: true },
+    endpoint: { type: String, required: true, unique: true },
+    expirationTime: { type: Number, default: null },
+    keys: {
+      p256dh: { type: String, required: true },
+      auth: { type: String, required: true },
+    },
+  },
+  { timestamps: true },
+);
+AdminDeviceSubscriptionSchema.index({ adminId: 1, createdAt: -1 });
+export const AdminDeviceSubscriptionModel = defineModel("AdminDeviceSubscription", AdminDeviceSubscriptionSchema);
+
 export const ALL_MODELS: Model<never>[] = [
   UnitModel,
   BookingModel,
@@ -234,4 +322,6 @@ export const ALL_MODELS: Model<never>[] = [
   SettingsModel,
   AdminModel,
   LiveStateModel,
+  AdminBookingNotificationModel,
+  AdminDeviceSubscriptionModel,
 ] as unknown as Model<never>[];

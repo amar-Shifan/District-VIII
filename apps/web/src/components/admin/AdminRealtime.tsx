@@ -49,6 +49,7 @@ export function AdminRealtime() {
         adminKeys.availabilityAll,
         adminKeys.blockedSlotsAll,
         adminKeys.food,
+        adminKeys.notifications,
       ]) {
         void queryClient.invalidateQueries({ queryKey });
       }
