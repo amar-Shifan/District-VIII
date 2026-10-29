@@ -156,6 +156,8 @@ export const updateSettingsSchema = z.strictObject({
   closeHour: hour.optional(),
   slotDurationHours: z.number().int().min(1).max(4).optional(),
   bookingWindowDays: z.number().int().min(1).max(14).optional(),
+  ps5PricePerHour: z.number().finite().min(0).max(100_000).multipleOf(0.01).nullable().optional(),
+  poolPricePerHour: z.number().finite().min(0).max(100_000).multipleOf(0.01).nullable().optional(),
 });
 
 // ---------- Auth and dashboard ----------
@@ -166,5 +168,6 @@ export const loginSchema = z.strictObject({
 });
 
 export const daysQuerySchema = z.strictObject({ days: queryInt(1, 90).optional() });
+export const emptyQuerySchema = z.strictObject({});
 
 export const liveQuerySchema = z.strictObject({ since: z.iso.datetime({ offset: true }).optional() });

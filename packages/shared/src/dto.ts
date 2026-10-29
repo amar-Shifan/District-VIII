@@ -78,6 +78,9 @@ export interface BookingDto {
   endsAt: IsoDateTime;
   customerName: string;
   customerPhone: string;
+  /** Saved hourly rate and estimated total for this booking; null when the rate was unset. */
+  pricePerHour: number | null;
+  estimatedAmount: number | null;
   status: BookingStatus;
   source: BookingSource;
   rejectionReason: string | null;
@@ -193,9 +196,11 @@ export interface OperatingHours {
 export interface SettingsDto extends OperatingHours {
   arenaName: string;
   bookingWindowDays: number;
+  ps5PricePerHour: number | null;
+  poolPricePerHour: number | null;
 }
 
-export interface PublicSettingsDto extends SettingsDto {
+export interface PublicSettingsDto extends Omit<SettingsDto, "ps5PricePerHour" | "poolPricePerHour"> {
   timeZone: string;
 }
 
@@ -234,6 +239,16 @@ export interface DashboardStatsDto {
   approvedToday: number;
   unitsInUse: number;
   totalUnits: number;
+  estimatedBookingValueToday: number | null;
+  unpricedApprovedToday: number;
+}
+
+export interface DailyEstimatedSalesDto {
+  date: IsoDate;
+  /** Null means at least one approved booking on this date has no saved estimate. */
+  estimatedBookingValue: number | null;
+  bookingCount: number;
+  missingEstimateCount: number;
 }
 
 export interface BookingsPerDayPoint {

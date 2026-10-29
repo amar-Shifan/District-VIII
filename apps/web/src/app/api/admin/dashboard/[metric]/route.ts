@@ -1,7 +1,7 @@
 import { requireAdmin } from "@/server/auth";
 import { json, notFound, parseQuery, route } from "@/server/http";
-import { bookingsPerDay, dashboardStats, peakHours, statusSplit, usageByType } from "@/server/services/dashboard";
-import { daysQuerySchema } from "@/server/validation";
+import { bookingsPerDay, dashboardStats, estimatedSalesLastSevenDays, peakHours, statusSplit, usageByType } from "@/server/services/dashboard";
+import { daysQuerySchema, emptyQuerySchema } from "@/server/validation";
 
 /**
  * stats, bookings-per-day (default 7 days), peak-hours, usage-by-type and
@@ -10,6 +10,10 @@ import { daysQuerySchema } from "@/server/validation";
 export const GET = route<RouteContext<"/api/admin/dashboard/[metric]">>(async (request, context) => {
   await requireAdmin(request);
   const { metric } = await context.params;
+  if (metric === "estimated-sales") {
+    parseQuery(request, emptyQuerySchema);
+    return json(await estimatedSalesLastSevenDays());
+  }
   const { days } = parseQuery(request, daysQuerySchema);
   switch (metric) {
     case "stats":

@@ -293,7 +293,7 @@ export const openApiDocument = {
         summary: "Dashboard data built with aggregation pipelines",
         security: admin,
         parameters: [
-          { name: "metric", in: "path", required: true, schema: { type: "string", enum: ["stats", "bookings-per-day", "peak-hours", "usage-by-type", "status-split"] } },
+          { name: "metric", in: "path", required: true, schema: { type: "string", enum: ["stats", "bookings-per-day", "estimated-sales", "peak-hours", "usage-by-type", "status-split"] } },
           query("days", { type: "integer", minimum: 1, maximum: 90 }, false, "7 for bookings-per-day, otherwise 30 by default"),
         ],
         responses: { ...ok({ type: "object" }), ...errors(401, 404) },
@@ -430,6 +430,8 @@ export const openApiDocument = {
           customerPhone: { type: "string" },
           status: bookingStatus,
           source: { type: "string", enum: ["online", "walk-in"] },
+          pricePerHour: { type: "number", nullable: true, minimum: 0, maximum: 100000, description: "Hourly rate saved when the booking was created." },
+          estimatedAmount: { type: "number", nullable: true, minimum: 0, maximum: 400000, description: "Estimated booking value saved when the booking was created; not a payment record." },
           rejectionReason: { type: "string", nullable: true },
           approvedAt: { type: "string", format: "date-time", nullable: true },
           createdAt: { type: "string", format: "date-time" },
@@ -444,6 +446,15 @@ export const openApiDocument = {
           page: { type: "integer" },
           pageSize: { type: "integer" },
           totalPages: { type: "integer" },
+        },
+      },
+      DailyEstimatedSales: {
+        type: "object",
+        properties: {
+          date: isoDate,
+          estimatedBookingValue: { type: "number", nullable: true, description: "Null when an approved booking lacks a saved estimate." },
+          bookingCount: { type: "integer" },
+          missingEstimateCount: { type: "integer" },
         },
       },
       BlockedSlot: {
@@ -495,6 +506,8 @@ export const openApiDocument = {
           closeHour: { type: "integer", minimum: 0, maximum: 23 },
           slotDurationHours: { type: "integer", minimum: 1, maximum: 4 },
           bookingWindowDays: { type: "integer", minimum: 1, maximum: 14 },
+          ps5PricePerHour: { type: "number", nullable: true, minimum: 0, maximum: 100000 },
+          poolPricePerHour: { type: "number", nullable: true, minimum: 0, maximum: 100000 },
         },
       },
       Admin: { type: "object", properties: { id: { type: "string" }, email: { type: "string" }, name: { type: "string" } } },

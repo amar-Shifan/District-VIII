@@ -9,7 +9,7 @@ import {
 } from "@district-viii/shared";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { CalendarCheck2, CheckCheck, Hourglass, Inbox, type LucideIcon, MonitorPlay } from "lucide-react";
+import { CalendarCheck2, CheckCheck, Hourglass, Inbox, IndianRupee, type LucideIcon, MonitorPlay } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { type ReactNode, useState } from "react";
@@ -21,11 +21,13 @@ import { useAdminToday } from "./use-admin-today";
 
 const chartLoading = () => <Skeleton className="size-full" />;
 const BookingsPerDayChart = dynamic(() => import("@/components/admin/charts/DashboardCharts").then((m) => m.BookingsPerDayChart), { ssr: false, loading: chartLoading });
+const EstimatedSalesBarChart = dynamic(() => import("@/components/admin/charts/DashboardCharts").then((m) => m.EstimatedSalesBarChart), { ssr: false, loading: chartLoading });
 const PeakHoursChart = dynamic(() => import("@/components/admin/charts/DashboardCharts").then((m) => m.PeakHoursChart), { ssr: false, loading: chartLoading });
 const UsageDonut = dynamic(() => import("@/components/admin/charts/DashboardCharts").then((m) => m.UsageDonut), { ssr: false, loading: chartLoading });
 const StatusSplitChart = dynamic(() => import("@/components/admin/charts/DashboardCharts").then((m) => m.StatusSplitChart), { ssr: false, loading: chartLoading });
 
 const IST_DATE = new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", weekday: "long", day: "numeric", month: "long" });
+const INR = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 });
 
 export function DashboardScreen() {
   const me = useQuery({ queryKey: adminKeys.me, queryFn: adminApi.me, staleTime: Infinity });
@@ -37,12 +39,24 @@ export function DashboardScreen() {
     peak: useQuery({ queryKey: [...adminKeys.charts, "peak"], queryFn: () => adminApi.peakHours(30) }),
     usage: useQuery({ queryKey: [...adminKeys.charts, "usage"], queryFn: () => adminApi.usageByType(30) }),
     split: useQuery({ queryKey: [...adminKeys.charts, "split"], queryFn: () => adminApi.statusSplit(30) }),
+    sales: useQuery({
+      queryKey: [...adminKeys.charts, "estimated-sales"],
+      queryFn: adminApi.estimatedSalesLastSevenDays,
+      refetchInterval: 60_000,
+    }),
   };
 
-  const statCards: { label: string; value: number | undefined; icon: LucideIcon; suffix?: string; href: string }[] = [
+  const statCards: { label: string; value: number | null | undefined; icon: LucideIcon; suffix?: string; href: string; currency?: boolean }[] = [
     { label: "Today's bookings", value: stats.data?.todayBookings, icon: CalendarCheck2, href: "/admin/bookings" },
     { label: "Pending approvals", value: stats.data?.pendingCount, icon: Hourglass, href: "/admin/bookings?status=pending" },
     { label: "Approved today", value: stats.data?.approvedToday, icon: CheckCheck, href: "/admin/bookings?status=approved" },
+    {
+      label: "Today's estimated value",
+      value: stats.data?.estimatedBookingValueToday,
+      icon: IndianRupee,
+      href: "/admin/bookings?status=approved",
+      currency: true,
+    },
     {
       label: "Units in use now",
       value: stats.data?.unitsInUse,
@@ -64,7 +78,7 @@ export function DashboardScreen() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {statCards.map((card, index) => (
           <motion.div
             key={card.label}
@@ -82,9 +96,22 @@ export function DashboardScreen() {
               <span className="min-w-0">
                 <span className="block text-xs font-bold text-wine-ink/55">{card.label}</span>
                 <span className="mt-0.5 flex items-baseline gap-1.5 -skew-x-8 font-display text-4xl leading-none text-wine-ink">
-                  {card.value === undefined ? <Skeleton className="h-9 w-12" /> : <CountUp value={card.value} />}
+                  {card.value === undefined ? (
+                    <Skeleton className="h-9 w-12" />
+                  ) : card.value === null ? (
+                    <span className="font-sans text-base font-bold">Incomplete</span>
+                  ) : card.currency ? (
+                    INR.format(card.value)
+                  ) : (
+                    <CountUp value={card.value} />
+                  )}
                   {card.suffix && <span className="text-xl text-wine-ink/40">{card.suffix}</span>}
                 </span>
+                {card.value === null && (
+                  <span className="mt-1 block text-xs font-semibold text-wine-ink/50">
+                    {stats.data?.unpricedApprovedToday ?? 0} approved booking{stats.data?.unpricedApprovedToday === 1 ? " has" : "s have"} no saved estimate.
+                  </span>
+                )}
               </span>
             </Link>
           </motion.div>
@@ -113,6 +140,30 @@ export function DashboardScreen() {
         </ChartCard>
         <ChartCard title="Status split" subtitle="All bookings, last 30 days" delay={0.41}>
           {charts.split.data ? <StatusSplitChart data={charts.split.data} /> : <Skeleton className="size-full" />}
+        </ChartCard>
+        <ChartCard title="Last 7 Days — Estimated Sales" subtitle="Estimated Booking Value (₹) · approved bookings only" className="xl:col-span-3" delay={0.48}>
+          {charts.sales.isPending ? (
+            <Skeleton className="size-full" />
+          ) : charts.sales.isError && !charts.sales.data ? (
+            <p role="alert" className="grid size-full place-items-center rounded-2xl bg-burgundy/[0.03] px-6 text-center text-sm font-semibold text-burgundy">
+              Could not load estimated sales. Please refresh to try again.
+            </p>
+          ) : charts.sales.data ? (
+            <div className="flex size-full flex-col">
+              <div className="min-h-0 flex-1">
+                <EstimatedSalesBarChart data={charts.sales.data} />
+              </div>
+              {charts.sales.data.every((day) => day.bookingCount === 0) && (
+                <p className="text-center text-xs font-semibold text-wine-ink/50">No approved bookings in this period. Each day is shown as zero.</p>
+              )}
+              {charts.sales.data.some((day) => day.missingEstimateCount > 0) && (
+                <p className="text-center text-xs font-semibold text-wine-ink/50">Incomplete days include approved bookings without a saved estimate.</p>
+              )}
+              {charts.sales.isError && (
+                <p role="alert" className="text-center text-xs font-semibold text-burgundy">Could not refresh estimated sales; showing the last loaded data.</p>
+              )}
+            </div>
+          ) : null}
         </ChartCard>
       </div>
 

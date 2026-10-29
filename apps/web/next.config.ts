@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["192.168.*.*", "10.*.*.*", "172.*.*.*"],
   partialPrefetching: true,
   // Mongoose loads drivers dynamically; keep it out of the server bundle.
-  serverExternalPackages: ["mongoose"],
+  serverExternalPackages: ["mongoose", "web-push"],
   // The security headers helmet used to add on the standalone API.
   async headers() {
     return [

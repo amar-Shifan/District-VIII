@@ -185,6 +185,8 @@ export const mockApi = {
       endsAt: new Date(startsAt.getTime() + HOUR_MS).toISOString(),
       customerName: input.customerName.trim(),
       customerPhone: phone,
+      pricePerHour: null,
+      estimatedAmount: null,
       status: "pending",
       source: "online",
       rejectionReason: null,

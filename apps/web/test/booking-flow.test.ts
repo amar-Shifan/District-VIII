@@ -6,6 +6,7 @@ import {
   businessDateOf,
 } from "@district-viii/shared";
 import { NextRequest } from "next/server";
+import * as webpush from "web-push";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { startTestMongo, type TestMongo } from "./mongo";
 
@@ -44,7 +45,11 @@ describe("booking flow through the API routes", () => {
     byPhone: typeof import("@/app/api/bookings/by-phone/[phone]/route");
     availability: typeof import("@/app/api/availability/route");
     login: typeof import("@/app/api/auth/login/route");
+    settings: typeof import("@/app/api/admin/settings/route");
     live: typeof import("@/app/api/live/route");
+    notifications: typeof import("@/app/api/admin/notifications/route");
+    pushSubscriptions: typeof import("@/app/api/admin/push-subscriptions/route");
+    dashboardMetric: typeof import("@/app/api/admin/dashboard/[metric]/route");
   };
 
   const slotState = async (startHour: number) => {
@@ -75,7 +80,11 @@ describe("booking flow through the API routes", () => {
       byPhone: await import("@/app/api/bookings/by-phone/[phone]/route"),
       availability: await import("@/app/api/availability/route"),
       login: await import("@/app/api/auth/login/route"),
+      settings: await import("@/app/api/admin/settings/route"),
       live: await import("@/app/api/live/route"),
+      notifications: await import("@/app/api/admin/notifications/route"),
+      pushSubscriptions: await import("@/app/api/admin/push-subscriptions/route"),
+      dashboardMetric: await import("@/app/api/admin/dashboard/[metric]/route"),
     };
   });
 
@@ -119,6 +128,13 @@ describe("booking flow through the API routes", () => {
     // 3. Admin routes are guarded.
     const anonymous = await routes.approve.PATCH(req(`/api/bookings/${booking.id}/approve`, { method: "PATCH" }), params({ id: booking.id }));
     expect(anonymous.status).toBe(401);
+    expect((await routes.settings.GET(req("/api/admin/settings"), {})).status).toBe(401);
+    expect(
+      (await routes.dashboardMetric.GET(req("/api/admin/dashboard/estimated-sales"), params({ metric: "estimated-sales" }))).status,
+    ).toBe(401);
+    expect((await routes.notifications.GET(req("/api/admin/notifications"), {})).status).toBe(401);
+    expect((await routes.pushSubscriptions.GET(req("/api/admin/push-subscriptions"), {})).status).toBe(401);
+    expect((await routes.pushSubscriptions.POST(req("/api/admin/push-subscriptions", { method: "POST", body: {} }), {})).status).toBe(401);
 
     const login = await routes.login.POST(req("/api/auth/login", { method: "POST", body: ADMIN }), {});
     expect(login.status).toBe(200);
@@ -126,6 +142,109 @@ describe("booking flow through the API routes", () => {
     expect(setCookie).toContain("d8_admin=");
     expect(setCookie.toLowerCase()).toContain("httponly");
     cookie = setCookie.split(";")[0] ?? "";
+
+    const estimatedSales = await routes.dashboardMetric.GET(
+      req("/api/admin/dashboard/estimated-sales", { headers: adminHeaders() }),
+      params({ metric: "estimated-sales" }),
+    );
+    expect(estimatedSales.status).toBe(200);
+    const salesDays = (await estimatedSales.json()) as { date: string; estimatedBookingValue: number | null; bookingCount: number }[];
+    expect(salesDays).toHaveLength(7);
+    expect(salesDays.every((day) => "estimatedBookingValue" in day && "bookingCount" in day)).toBe(true);
+    const invalidSalesQuery = await routes.dashboardMetric.GET(
+      req("/api/admin/dashboard/estimated-sales?unexpected=1", { headers: adminHeaders() }),
+      params({ metric: "estimated-sales" }),
+    );
+    expect(invalidSalesQuery.status).toBe(400);
+
+    const initialSettings = await routes.settings.GET(req("/api/admin/settings", { headers: adminHeaders() }), {});
+    expect(initialSettings.status).toBe(200);
+    expect(await initialSettings.json()).toMatchObject({ ps5PricePerHour: null, poolPricePerHour: null });
+    const unauthorizedPriceUpdate = await routes.settings.PUT(
+      req("/api/admin/settings", { method: "PUT", body: { ps5PricePerHour: 12 }, headers: {} }),
+      {},
+    );
+    expect(unauthorizedPriceUpdate.status).toBe(401);
+    const invalidPriceUpdate = await routes.settings.PUT(
+      req("/api/admin/settings", { method: "PUT", body: { ps5PricePerHour: -1 }, headers: adminHeaders() }),
+      {},
+    );
+    expect(invalidPriceUpdate.status).toBe(400);
+    const ps5PriceUpdate = await routes.settings.PUT(
+      req("/api/admin/settings", { method: "PUT", body: { ps5PricePerHour: 100 }, headers: adminHeaders() }),
+      {},
+    );
+    expect(await ps5PriceUpdate.json()).toMatchObject({ ps5PricePerHour: 100, poolPricePerHour: null });
+    const poolPriceUpdate = await routes.settings.PUT(
+      req("/api/admin/settings", { method: "PUT", body: { poolPricePerHour: 18 }, headers: adminHeaders() }),
+      {},
+    );
+    expect(await poolPriceUpdate.json()).toMatchObject({ ps5PricePerHour: 100, poolPricePerHour: 18 });
+    const { clearSettingsCache } = await import("@/server/services/settings");
+    clearSettingsCache();
+    const persistedSettings = await routes.settings.GET(req("/api/admin/settings", { headers: adminHeaders() }), {});
+    expect(await persistedSettings.json()).toMatchObject({ ps5PricePerHour: 100, poolPricePerHour: 18 });
+
+    const notificationResponse = await routes.notifications.GET(
+      req("/api/admin/notifications", { headers: adminHeaders() }),
+      {},
+    );
+    expect(notificationResponse.status).toBe(200);
+    const notifications = (await notificationResponse.json()) as {
+      unreadCount: number;
+      items: { id: string; bookingId: string; isRead: boolean }[];
+    };
+    expect(notifications).toMatchObject({ unreadCount: 1, items: [{ bookingId: booking.id, isRead: false }] });
+    const markedRead = await routes.notifications.PATCH(
+      req("/api/admin/notifications", { method: "PATCH", body: { id: notifications.items[0]!.id }, headers: adminHeaders() }),
+      {},
+    );
+    expect(markedRead.status).toBe(204);
+    const afterRead = await routes.notifications.GET(req("/api/admin/notifications", { headers: adminHeaders() }), {});
+    expect((await afterRead.json()).unreadCount).toBe(0);
+
+    const previousVapid = {
+      publicKey: process.env.VAPID_PUBLIC_KEY,
+      privateKey: process.env.VAPID_PRIVATE_KEY,
+      subject: process.env.VAPID_SUBJECT,
+    };
+    const vapid = webpush.generateVAPIDKeys();
+    process.env.VAPID_PUBLIC_KEY = vapid.publicKey;
+    process.env.VAPID_PRIVATE_KEY = vapid.privateKey;
+    process.env.VAPID_SUBJECT = "mailto:admin@test.local";
+    try {
+      const pushKey = await routes.pushSubscriptions.GET(req("/api/admin/push-subscriptions", { headers: adminHeaders() }), {});
+      expect(await pushKey.json()).toEqual({ vapidPublicKey: vapid.publicKey });
+      const subscriptionInput = {
+        endpoint: "https://push.example.test/subscription/one",
+        expirationTime: null,
+        keys: { p256dh: "p".repeat(65), auth: "a".repeat(24) },
+      };
+      const subscribed = await routes.pushSubscriptions.POST(
+        req("/api/admin/push-subscriptions", { method: "POST", body: subscriptionInput, headers: adminHeaders() }),
+        {},
+      );
+      expect(subscribed.status).toBe(204);
+      const { AdminDeviceSubscriptionModel, AdminModel } = await import("@/server/models");
+      const [stored, admin] = await Promise.all([
+        AdminDeviceSubscriptionModel.findOne({ endpoint: subscriptionInput.endpoint }).lean().exec(),
+        AdminModel.findOne({ email: ADMIN.email }).lean().exec(),
+      ]);
+      expect(stored?.adminId.toString()).toBe(String(admin?._id));
+      const removed = await routes.pushSubscriptions.DELETE(
+        req("/api/admin/push-subscriptions", { method: "DELETE", body: { endpoint: subscriptionInput.endpoint }, headers: adminHeaders() }),
+        {},
+      );
+      expect(removed.status).toBe(204);
+      expect(await AdminDeviceSubscriptionModel.countDocuments({ endpoint: subscriptionInput.endpoint })).toBe(0);
+    } finally {
+      if (previousVapid.publicKey === undefined) delete process.env.VAPID_PUBLIC_KEY;
+      else process.env.VAPID_PUBLIC_KEY = previousVapid.publicKey;
+      if (previousVapid.privateKey === undefined) delete process.env.VAPID_PRIVATE_KEY;
+      else process.env.VAPID_PRIVATE_KEY = previousVapid.privateKey;
+      if (previousVapid.subject === undefined) delete process.env.VAPID_SUBJECT;
+      else process.env.VAPID_SUBJECT = previousVapid.subject;
+    }
 
     // The session cookie alone isn't enough for a mutation: the CSRF header is required.
     const noHeader = await routes.approve.PATCH(

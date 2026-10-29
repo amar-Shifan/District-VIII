@@ -17,6 +17,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { adminApi, adminKeys } from "@/lib/admin-api";
+import { ADMIN_REQUEST_HEADER } from "@/lib/admin-session";
 
 interface NavItem {
   href: string;
@@ -56,6 +57,21 @@ export function Sidebar() {
   const pending = stats.data?.pendingCount ?? 0;
 
   const logout = async () => {
+    try {
+      const registration = await navigator.serviceWorker?.getRegistration("/");
+      const subscription = await registration?.pushManager.getSubscription();
+      if (subscription) {
+        await fetch("/api/admin/push-subscriptions", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json", [ADMIN_REQUEST_HEADER]: "1" },
+          body: JSON.stringify({ endpoint: subscription.endpoint }),
+          signal: AbortSignal.timeout(2000),
+        }).catch(() => undefined);
+        await subscription.unsubscribe().catch(() => false);
+      }
+    } catch {
+      // A stale server-side endpoint is removed after its push service returns 410.
+    }
     await fetch("/api/auth/logout", { method: "POST" });
     router.replace("/admin/login");
     router.refresh();

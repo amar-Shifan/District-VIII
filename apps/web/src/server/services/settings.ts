@@ -23,6 +23,8 @@ function toDto(doc: Settings | null): SettingsDto {
     closeHour: doc.closeHour,
     slotDurationHours: doc.slotDurationHours,
     bookingWindowDays: doc.bookingWindowDays,
+    ps5PricePerHour: doc.ps5PricePerHour ?? null,
+    poolPricePerHour: doc.poolPricePerHour ?? null,
   };
 }
 
@@ -38,7 +40,15 @@ export async function getSettings(): Promise<SettingsDto> {
 }
 
 export async function getPublicSettings(): Promise<PublicSettingsDto> {
-  return { ...(await getSettings()), timeZone: ARENA_TIME_ZONE };
+  const settings = await getSettings();
+  return {
+    arenaName: settings.arenaName,
+    openHour: settings.openHour,
+    closeHour: settings.closeHour,
+    slotDurationHours: settings.slotDurationHours,
+    bookingWindowDays: settings.bookingWindowDays,
+    timeZone: ARENA_TIME_ZONE,
+  };
 }
 
 export async function updateSettings(input: UpdateSettingsInput): Promise<SettingsDto> {

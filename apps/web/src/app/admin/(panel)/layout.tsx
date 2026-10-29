@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { AdminRealtime } from "@/components/admin/AdminRealtime";
+import { NotificationBell } from "@/components/admin/NotificationBell";
 import { Sidebar } from "@/components/admin/Sidebar";
 import { ToastProvider } from "@/components/admin/Toaster";
 
@@ -14,6 +15,7 @@ export default function AdminPanelLayout({ children }: { children: ReactNode }) 
     <ToastProvider>
       <div data-admin-root className="bg-admin-page min-h-dvh text-wine-ink">
         <Sidebar />
+        <NotificationBell />
         <AdminRealtime />
         {/* Offset by the collapsed sidebar; the expanded sidebar overlays instead of pushing. */}
         <main className="mx-auto max-w-[1400px] py-6 pr-4 pl-[92px] sm:py-8 sm:pr-8 sm:pl-[120px]">{children}</main>
