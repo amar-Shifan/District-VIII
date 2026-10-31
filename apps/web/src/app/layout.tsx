@@ -25,6 +25,10 @@ export const metadata: Metadata = {
   description: "District VIII, Panoor: eight-ball pool, PS5 stations and food. Check live availability and book.",
   applicationName: "District VIII",
   manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/LOGO.png",
+    apple: "/LOGO.png",
+  },
   appleWebApp: {
     capable: true,
     title: "District VIII",
