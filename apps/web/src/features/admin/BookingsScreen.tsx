@@ -145,7 +145,36 @@ export function BookingsScreen() {
       </AdminCard>
 
       <AdminCard className="overflow-hidden p-0">
-        <div className="overflow-x-auto">
+        <div className="divide-y divide-burgundy/8 lg:hidden">
+          {bookings.isPending
+            ? Array.from({ length: 4 }, (_, index) => <div key={index} className="p-4"><Skeleton className="h-24" /></div>)
+            : data?.items.map((booking) => (
+                <article key={booking.id} className="space-y-3 p-4">
+                  <div className="flex min-w-0 items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="break-words font-bold text-wine-ink">{booking.customerName}</p>
+                      <p className="text-xs text-wine-ink/55">{formatPhone(booking.customerPhone)}</p>
+                    </div>
+                    <AdminStatusBadge status={booking.status} />
+                  </div>
+                  <div className="grid min-w-0 grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                    <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-wide text-wine-ink/45">Unit</p><p className="break-words font-semibold">{booking.unitName}</p><p className="text-xs text-wine-ink/55">{booking.unitType === "pool" ? "8 Ball Pool" : "PS5"}</p></div>
+                    <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-wide text-wine-ink/45">Date &amp; time</p><p className="break-words font-semibold">{today ? formatBusinessDate(booking.businessDate, today) : booking.businessDate}</p><p className="text-xs text-wine-ink/55">{formatSlotRange(booking.startHour, booking.durationHours)}</p></div>
+                    <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-wide text-wine-ink/45">Source</p><p className="break-words text-xs font-semibold capitalize text-wine-ink/60">{booking.source}</p></div>
+                    <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-wide text-wine-ink/45">Requested</p><p className="break-words text-xs text-wine-ink/55">{new Date(booking.createdAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</p></div>
+                  </div>
+                  {booking.status === "rejected" && booking.rejectionReason && <p className="text-xs text-wine-ink/50">Reason: {booking.rejectionReason}</p>}
+                  <div className="flex flex-wrap justify-end gap-1.5">
+                    {booking.status === "pending" && <>
+                      <AdminButton size="sm" onClick={() => approve.mutate(booking)} aria-label={`Approve ${booking.customerName}`}>Approve</AdminButton>
+                      <AdminButton size="sm" variant="outline" onClick={() => setRejecting(booking)} aria-label={`Reject ${booking.customerName}`}>Reject</AdminButton>
+                    </>}
+                    {(booking.status === "pending" || booking.status === "approved") && <AdminButton size="sm" variant="ghost" onClick={() => setCancelling(booking)} aria-label={`Cancel ${booking.customerName}`}>Cancel</AdminButton>}
+                  </div>
+                </article>
+              ))}
+        </div>
+        <div className="hidden overflow-x-auto lg:block">
           <table className="w-full min-w-[860px] text-left text-sm">
             <thead className="border-b border-burgundy/10 bg-burgundy/3 text-xs text-wine-ink/55">
               <tr>

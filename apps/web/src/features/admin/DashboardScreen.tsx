@@ -70,7 +70,7 @@ export function DashboardScreen() {
     <div>
       <header className="mb-8">
         <p className="text-sm font-semibold text-wine-ink/50">{now ? IST_DATE.format(now) : " "}</p>
-        <h1 className="mt-1 -skew-x-8 font-display text-4xl leading-none text-wine-ink sm:text-5xl">
+        <h1 className="mt-1 max-w-full -skew-x-8 font-display text-[clamp(1.875rem,7vw,3rem)] leading-[1.08] break-words text-wine-ink md:text-5xl">
           Welcome back{me.data ? `, ${me.data.name}` : ""}
         </h1>
         <div aria-hidden className="mt-4 h-1 w-48 overflow-hidden rounded-full bg-burgundy/10">
@@ -78,7 +78,7 @@ export function DashboardScreen() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {statCards.map((card, index) => (
           <motion.div
             key={card.label}
