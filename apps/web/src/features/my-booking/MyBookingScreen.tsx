@@ -30,7 +30,7 @@ export function MyBookingScreen() {
   const past = (bookings.data ?? []).filter((booking) => now && Date.parse(booking.endsAt) <= now.getTime());
 
   return (
-    <div className="relative flex h-full flex-col bg-ink">
+    <div className="relative flex h-full flex-col bg-ink lg:h-auto lg:min-h-dvh">
       <div aria-hidden className="bg-home-glow pointer-events-none absolute inset-x-0 top-0 h-2/3" />
       <ScreenHeader
         title="My booking"
@@ -38,7 +38,7 @@ export function MyBookingScreen() {
         action={activePhone ? <LiveIndicator /> : undefined}
       />
 
-      <main className="relative flex min-h-0 flex-1 flex-col px-4 pt-4 pb-[calc(var(--safe-bottom)+16px)]">
+      <main className="relative flex min-h-0 flex-1 flex-col px-4 pt-4 pb-[calc(var(--safe-bottom)+16px)] md:px-10 lg:mx-auto lg:w-full lg:max-w-[1440px] lg:px-14 lg:pt-8 lg:pb-12">
         {!activePhone ? (
           <PhoneLookup
             initialPhone={profile?.phone ?? ""}
@@ -62,7 +62,7 @@ export function MyBookingScreen() {
             </div>
 
             {/* The only scrolling region on this screen. */}
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2 lg:overflow-visible">
               {bookings.isPending ? (
                 <div role="status" aria-label="Loading bookings" className="space-y-3">
                   {[0, 1, 2].map((index) => (
@@ -98,7 +98,7 @@ export function MyBookingScreen() {
                   }
                 />
               ) : (
-                <div className="space-y-5">
+                <div className="space-y-5 lg:grid lg:grid-cols-[repeat(2,minmax(0,1fr))] lg:items-start lg:gap-6 lg:space-y-0">
                   {upcoming.length > 0 && (
                     <section aria-label="Upcoming bookings">
                       <ul className="space-y-3">
@@ -153,7 +153,7 @@ function PhoneLookup({ initialPhone, onSubmit }: { initialPhone: string; onSubmi
     <motion.form
       noValidate
       onSubmit={submit}
-      className="flex flex-1 flex-col justify-center gap-5"
+      className="flex flex-1 flex-col justify-center gap-5 lg:my-auto lg:mx-auto lg:w-full lg:max-w-xl lg:flex-none lg:rounded-card lg:border lg:border-white/10 lg:bg-white/[0.03] lg:p-8"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.15, duration: 0.45 }}

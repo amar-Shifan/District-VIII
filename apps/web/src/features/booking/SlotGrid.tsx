@@ -47,7 +47,7 @@ export function SlotGrid({ slots, durationHours, openHour, selectedHour, onSelec
   const late = slots.filter((slot) => slot.startHour < openHour);
 
   const renderGroup = (group: SlotDto[], offset: number) => (
-    <div className="grid grid-cols-4 gap-2">
+    <div className="grid grid-cols-4 gap-2 md:grid-cols-6 lg:grid-cols-6 xl:grid-cols-8">
       {group.map((slot, index) => {
         const selected = slot.startHour === selectedHour;
         const caption = CAPTION[slot.state];

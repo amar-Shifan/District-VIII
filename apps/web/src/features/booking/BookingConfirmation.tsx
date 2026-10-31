@@ -25,14 +25,14 @@ export function BookingConfirmation({ booking, dateLabel, timeLabel, onClose }: 
       role="dialog"
       aria-modal="true"
       aria-labelledby="booking-confirmed-title"
-      className="absolute inset-0 z-50 flex flex-col bg-ink px-6 pt-[calc(var(--safe-top)+48px)] pb-[calc(var(--safe-bottom)+24px)]"
+      className="absolute inset-0 z-50 flex flex-col bg-ink px-6 pt-[calc(var(--safe-top)+48px)] pb-[calc(var(--safe-bottom)+24px)] lg:items-center lg:justify-center lg:gap-8 lg:px-10 lg:py-12"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
       <div aria-hidden className="bg-home-glow pointer-events-none absolute inset-x-0 top-0 h-2/3" />
 
-      <div className="relative flex flex-1 flex-col items-center justify-center text-center">
+      <div className="relative flex flex-1 flex-col items-center justify-center text-center lg:flex-none">
         <motion.svg
           viewBox="0 0 120 120"
           className="size-32 drop-shadow-[0_0_30px_var(--color-burgundy-bright)]"
@@ -65,7 +65,7 @@ export function BookingConfirmation({ booking, dateLabel, timeLabel, onClose }: 
         </motion.div>
 
         <motion.dl
-          className="bg-card-gradient mt-8 w-full rounded-card border border-white/10 p-5 text-left shadow-card"
+          className="bg-card-gradient mt-8 w-full rounded-card border border-white/10 p-5 text-left shadow-card lg:max-w-3xl lg:p-8"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
@@ -94,7 +94,7 @@ export function BookingConfirmation({ booking, dateLabel, timeLabel, onClose }: 
       </div>
 
       <motion.div
-        className="relative grid gap-2.5"
+        className="relative grid gap-2.5 lg:w-full lg:max-w-3xl lg:grid-cols-2"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.75 }}

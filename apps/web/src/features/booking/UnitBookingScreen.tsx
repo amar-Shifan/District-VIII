@@ -73,7 +73,7 @@ export function UnitBookingScreen({ type }: { type: UnitType }) {
   const loading = !dates || availability.isPending;
 
   return (
-    <div className="relative flex h-full flex-col bg-ink">
+    <div className="relative flex h-full flex-col bg-ink lg:h-auto lg:min-h-dvh">
       <div aria-hidden className="bg-home-glow pointer-events-none absolute inset-x-0 top-0 h-2/3" />
 
       <ScreenHeader
@@ -82,7 +82,7 @@ export function UnitBookingScreen({ type }: { type: UnitType }) {
         action={<LiveIndicator />}
       />
 
-      <main className="relative flex min-h-0 flex-1 flex-col gap-4 px-4 pt-4 pb-[calc(var(--safe-bottom)+16px)]">
+      <main className="relative flex min-h-0 flex-1 flex-col gap-4 px-4 pt-4 pb-[calc(var(--safe-bottom)+16px)] md:px-10 lg:mx-auto lg:grid lg:w-full lg:max-w-[1440px] lg:flex-1 lg:grid-cols-[minmax(250px,0.8fr)_minmax(0,1.6fr)] lg:grid-rows-[1fr_auto] lg:gap-6 lg:px-14 lg:pt-8 lg:pb-10">
         {loading && !availability.isError && !settings.isError ? (
           <LoadingState />
         ) : availability.isError || settings.isError ? (
@@ -105,20 +105,28 @@ export function UnitBookingScreen({ type }: { type: UnitType }) {
           />
         ) : (
           <>
-            <UnitPicker
-              units={units}
-              selectedId={active.unit.id}
-              isToday={date === today}
-              onSelect={(unitId) => {
-                setPickedUnitId(unitId);
-                setSelection(null);
-              }}
-            />
-            <DateTabs dates={dates} today={today} selected={date} onSelect={setPickedDate} />
+            <div className="flex flex-col gap-4 lg:row-span-2 lg:gap-6">
+              <div>
+                <p className="mb-3 hidden text-xs font-bold tracking-[0.2em] text-blush/80 uppercase lg:block">Choose a station</p>
+                <UnitPicker
+                  units={units}
+                  selectedId={active.unit.id}
+                  isToday={date === today}
+                  onSelect={(unitId) => {
+                    setPickedUnitId(unitId);
+                    setSelection(null);
+                  }}
+                />
+              </div>
+              <div>
+                <p className="mb-3 hidden text-xs font-bold tracking-[0.2em] text-blush/80 uppercase lg:block">Choose a day</p>
+                <DateTabs dates={dates} today={today} selected={date} onSelect={setPickedDate} />
+              </div>
+            </div>
 
             <section
               aria-label={`Hourly slots for ${active.unit.name}`}
-              className="flex min-h-0 flex-1 flex-col rounded-card border border-white/10 bg-white/3"
+              className="flex min-h-0 flex-1 flex-col rounded-card border border-white/10 bg-white/3 lg:min-h-[560px]"
             >
               <div className="flex items-center justify-between px-4 pt-4 pb-2">
                 <h2 className="-skew-x-8 font-display text-xl text-white">{active.unit.name}</h2>

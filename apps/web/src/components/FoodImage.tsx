@@ -18,6 +18,7 @@ interface FoodImageProps {
   src: string;
   alt: string;
   size: number;
+  responsive?: boolean;
   className?: string;
 }
 
@@ -25,7 +26,7 @@ interface FoodImageProps {
  * Menu photo with a branded fallback when the URL is empty or fails to load.
  * Hosts outside NEXT_PUBLIC_IMAGE_HOSTS render unoptimized instead of erroring.
  */
-export function FoodImage({ src, alt, size, className = "" }: FoodImageProps) {
+export function FoodImage({ src, alt, size, responsive = false, className = "" }: FoodImageProps) {
   const [failed, setFailed] = useState(false);
 
   if (!src || failed) {
@@ -34,7 +35,7 @@ export function FoodImage({ src, alt, size, className = "" }: FoodImageProps) {
         role="img"
         aria-label={alt}
         className={`bg-card-gradient grid shrink-0 place-items-center text-white/70 ${className}`}
-        style={{ width: size, height: size }}
+        style={responsive ? undefined : { width: size, height: size }}
       >
         <UtensilsCrossed aria-hidden strokeWidth={1.5} className="size-1/3" />
       </span>
@@ -51,7 +52,7 @@ export function FoodImage({ src, alt, size, className = "" }: FoodImageProps) {
       unoptimized={!canOptimize(src)}
       onError={() => setFailed(true)}
       className={`shrink-0 object-cover ${className}`}
-      style={{ width: size, height: size }}
+      style={responsive ? undefined : { width: size, height: size }}
     />
   );
 }
