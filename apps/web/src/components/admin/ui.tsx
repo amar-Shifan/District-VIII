@@ -23,8 +23,8 @@ export function AdminCard({ className = "", children }: { className?: string; ch
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: ReactNode; actions?: ReactNode }) {
   return (
     <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <h1 className="-skew-x-8 font-display text-4xl leading-none text-wine-ink sm:text-5xl">{title}</h1>
+      <div className="min-w-0 max-w-full">
+        <h1 className="-skew-x-8 font-display text-[clamp(1.875rem,7vw,3rem)] leading-[1.08] break-words text-wine-ink md:text-5xl">{title}</h1>
         {subtitle && <p className="mt-2 text-sm text-wine-ink/60">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}

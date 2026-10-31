@@ -80,7 +80,7 @@ export function UnitsScreen() {
       />
 
       {units.isPending ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {[0, 1, 2, 3, 4].map((index) => (
             <Skeleton key={index} className="h-56 rounded-card-sm" />
           ))}
@@ -98,7 +98,7 @@ export function UnitsScreen() {
               <h2 id={`units-${group.type}`} className="mb-3 text-xs font-bold tracking-[0.2em] text-wine-ink/50 uppercase">
                 {group.title}
               </h2>
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {list.map((unit, index) => (
                   <UnitCard
                     key={unit.id}

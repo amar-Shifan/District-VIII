@@ -20,7 +20,7 @@ export function LandingBackground() {
             alt=""
             fill
             preload
-            sizes="(max-width: 430px) 100vw, 430px"
+            sizes="100vw"
             // Low-opacity grayscale photo blended into the burgundy base keeps the palette burgundy-only.
             className="object-cover opacity-55 mix-blend-luminosity grayscale"
             onError={() => setImageFailed(true)}

@@ -34,7 +34,7 @@ export function UnitPicker({ units, selectedId, isToday, onSelect }: UnitPickerP
   const fits = units.length <= 3;
 
   return (
-    <div role="group" aria-label="Choose a unit" className={`flex gap-2 ${fits ? "" : "-mx-4 snap-x overflow-x-auto px-4 pb-1 [scrollbar-width:none]"}`}>
+    <div role="group" aria-label="Choose a unit" className={`flex gap-2 lg:flex-col ${fits ? "" : "-mx-4 snap-x overflow-x-auto px-4 pb-1 [scrollbar-width:none]"}`}>
       {units.map((entry, index) => {
         const selected = entry.unit.id === selectedId;
         const status = liveStatus(entry, isToday, now);
@@ -48,7 +48,7 @@ export function UnitPicker({ units, selectedId, isToday, onSelect }: UnitPickerP
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 + index * 0.06, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            className={`relative overflow-hidden rounded-card-sm border p-3 text-left ${fits ? "min-w-0 flex-1" : "w-[31%] shrink-0 snap-start"} transition-[border-color,box-shadow,transform] duration-200 outline-none focus-visible:ring-2 focus-visible:ring-blush active:scale-[0.97] ${
+            className={`relative overflow-hidden rounded-card-sm border p-3 text-left ${fits ? "min-w-0 flex-1" : "w-[31%] shrink-0 snap-start"} transition-[border-color,box-shadow,transform] duration-200 outline-none focus-visible:ring-2 focus-visible:ring-blush active:scale-[0.97] lg:w-full lg:flex-none lg:p-5 ${
               selected ? "bg-card-gradient border-burgundy-bright shadow-card" : "border-white/10 bg-white/4 hover:border-white/25"
             }`}
           >

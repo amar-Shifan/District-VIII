@@ -19,15 +19,15 @@ export function FoodScreen() {
   const chips = [{ name: "All", value: null }, ...(categories.data ?? []).map((c) => ({ name: c.name, value: c.name }))];
 
   return (
-    <div className="relative flex h-full flex-col bg-ink">
+    <div className="relative flex h-full flex-col bg-ink lg:h-auto lg:min-h-dvh">
       <div aria-hidden className="bg-home-glow pointer-events-none absolute inset-x-0 top-0 h-2/3" />
       <ScreenHeader title="Food & Drinks" subtitle="Order at the counter · menu only" />
 
-      <main className="relative flex min-h-0 flex-1 flex-col pt-4 pb-[calc(var(--safe-bottom)+8px)]">
+      <main className="relative flex min-h-0 flex-1 flex-col pt-4 pb-[calc(var(--safe-bottom)+8px)] lg:mx-auto lg:w-full lg:max-w-[1440px] lg:pt-8 lg:pb-12">
         <div
           role="group"
           aria-label="Filter by category"
-          className="flex shrink-0 gap-2 overflow-x-auto px-4 pb-3 [scrollbar-width:none]"
+          className="flex shrink-0 gap-2 overflow-x-auto px-4 pb-3 [scrollbar-width:none] md:px-6 lg:flex-wrap lg:overflow-visible lg:px-14 lg:pb-6"
         >
           {categories.isPending
             ? [0, 1, 2, 3].map((index) => <Shimmer key={index} className="h-10 w-24 shrink-0 rounded-full" />)
@@ -58,7 +58,7 @@ export function FoodScreen() {
         </div>
 
         {/* The only vertical scroll on this screen. */}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 md:px-6 lg:overflow-visible lg:px-14">
           {food.isPending ? (
             <div role="status" aria-label="Loading menu" className="space-y-3">
               {[0, 1, 2, 3, 4].map((index) => (
@@ -80,7 +80,7 @@ export function FoodScreen() {
           ) : items.length === 0 ? (
             <StateMessage icon={SearchX} title="Nothing here yet" description="This part of the menu is empty right now." />
           ) : (
-            <ul className="space-y-3" aria-label={category ? `${category} items` : "All menu items"}>
+            <ul className="space-y-3 md:grid md:grid-cols-[repeat(2,minmax(0,1fr))] md:gap-5 md:space-y-0 lg:grid-cols-[repeat(3,minmax(0,1fr))] xl:grid-cols-[repeat(4,minmax(0,1fr))] lg:gap-6" aria-label={category ? `${category} items` : "All menu items"}>
               {items.map((item, index) => (
                 <FoodRow key={item.id} item={item} index={index} />
               ))}
@@ -99,10 +99,12 @@ function FoodRow({ item, index }: { item: PublicFoodItemDto; index: number }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: Math.min(index, 8) * 0.05, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      className="bg-card-gradient flex items-center gap-4 rounded-card-sm border border-white/10 p-3 shadow-card"
+      className="bg-card-gradient flex min-w-0 items-center gap-4 rounded-card-sm border border-white/10 p-3 shadow-card lg:flex-col lg:items-stretch lg:gap-4 lg:rounded-card lg:p-4"
     >
-      <FoodImage src={item.imageUrl} alt={item.name} size={84} className="rounded-2xl" />
-      <div className="min-w-0 flex-1">
+      <div className="h-[84px] w-[84px] shrink-0 lg:h-52 lg:w-full">
+        <FoodImage src={item.imageUrl} alt={item.name} size={84} responsive className="h-full w-full rounded-2xl" />
+      </div>
+      <div className="min-w-0 flex-1 lg:flex-none">
         <p className="text-[10px] font-bold tracking-[0.22em] text-blush uppercase">{item.category}</p>
         <h2 className="mt-0.5 -skew-x-8 font-display text-xl leading-tight text-white">{item.name}</h2>
         {item.description && <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-blush/90">{item.description}</p>}

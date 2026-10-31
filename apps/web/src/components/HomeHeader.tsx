@@ -20,12 +20,12 @@ export function HomeHeader({ hasPendingBooking, closeHour }: HomeHeaderProps) {
   const closesAt = closeHour === undefined ? VENUE.closesAtLabel : formatClosing(closeHour);
   return (
     <motion.header
-      className="relative z-10 mx-4 mt-[calc(var(--safe-top)+12px)] rounded-full"
+      className="relative z-10 mx-4 mt-[calc(var(--safe-top)+12px)] rounded-full md:mx-10 lg:mx-auto lg:mt-8 lg:w-[calc(100%-7rem)] lg:max-w-[1328px]"
       initial={{ y: -110, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 260, damping: 16, mass: 0.9 }}
     >
-      <div className="relative flex items-center justify-between gap-3 rounded-full border border-burgundy/60 bg-ink/60 py-2 pr-2 pl-6 shadow-glow backdrop-blur-xl">
+      <div className="relative flex items-center justify-between gap-3 rounded-full border border-burgundy/60 bg-ink/60 py-2 pr-2 pl-6 shadow-glow backdrop-blur-xl lg:px-8 lg:py-3">
         <div className="min-w-0">
           <p className="text-shine -skew-x-8 font-display text-[26px] leading-none motion-safe:animate-shine">
             {VENUE.wordmark}

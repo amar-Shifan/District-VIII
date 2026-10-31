@@ -36,7 +36,7 @@ function SheetBody({ onClose, title, description, children }: Omit<BottomSheetPr
   useFocusTrap(panelRef, true, onClose);
 
   return (
-    <div className="absolute inset-0 z-40 flex flex-col justify-end">
+    <div className="absolute inset-0 z-40 flex flex-col justify-end lg:items-center lg:justify-center lg:p-8">
       <motion.button
         type="button"
         aria-label="Close"
@@ -54,7 +54,7 @@ function SheetBody({ onClose, title, description, children }: Omit<BottomSheetPr
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
-        className="relative max-h-[88%] overflow-y-auto rounded-t-card border-t border-burgundy-bright/50 bg-ink px-5 pt-3 pb-[calc(var(--safe-bottom)+20px)] shadow-card outline-none"
+        className="relative max-h-[88%] overflow-y-auto rounded-t-card border-t border-burgundy-bright/50 bg-ink px-5 pt-3 pb-[calc(var(--safe-bottom)+20px)] shadow-card outline-none lg:w-full lg:max-w-2xl lg:rounded-card lg:border lg:border-burgundy-bright/50 lg:px-8 lg:py-6"
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}

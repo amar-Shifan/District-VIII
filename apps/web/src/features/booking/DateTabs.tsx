@@ -12,7 +12,7 @@ interface DateTabsProps {
 
 export function DateTabs({ dates, today, selected, onSelect }: DateTabsProps) {
   return (
-    <div role="group" aria-label="Choose a date" className="flex gap-2">
+    <div role="group" aria-label="Choose a date" className="flex gap-2 lg:grid lg:grid-cols-3 lg:gap-3">
       {dates.map((date) => {
         const active = date === selected;
         const label = formatBusinessDate(date, today);

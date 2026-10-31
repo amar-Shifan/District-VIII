@@ -18,7 +18,7 @@ interface ScreenHeaderProps {
 export function ScreenHeader({ title, subtitle, backHref = "/home", action }: ScreenHeaderProps) {
   return (
     <motion.header
-      className="relative z-10 mx-4 mt-[calc(var(--safe-top)+12px)] shrink-0 rounded-full"
+      className="relative z-10 mx-4 mt-[calc(var(--safe-top)+12px)] shrink-0 rounded-full md:mx-10 lg:mx-auto lg:mt-8 lg:w-[calc(100%-7rem)] lg:max-w-[1328px]"
       initial={{ y: -96, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 260, damping: 18, mass: 0.9 }}

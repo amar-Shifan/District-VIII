@@ -37,6 +37,7 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [featureMessage, setFeatureMessage] = useState("");
+  const popupRoot = useRef<HTMLDivElement>(null);
   const soundEnabled = useSyncExternalStore(subscribeSoundPreference, getSoundPreference, () => false);
   const pushSupported = useSyncExternalStore(subscribeDevicePushSupport, isDevicePushSupported, () => false);
   const queryClient = useQueryClient();
@@ -59,7 +60,25 @@ export function NotificationBell() {
   const markRead = useMutation({ mutationFn: adminApi.markNotificationRead, onSuccess: refresh });
   const markAllRead = useMutation({ mutationFn: adminApi.markAllNotificationsRead, onSuccess: refresh });
 
-  const items = notifications.data?.items ?? [];
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!popupRoot.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  // Read notifications are persisted by the server for this admin; keep the
+  // popup focused on unread items so cleared notifications do not return.
+  const items = notifications.data?.items.filter((item) => !item.isRead) ?? [];
   const unreadCount = notifications.data?.unreadCount ?? 0;
   const playChime = useCallback(() => {
     const context = audioContext.current;
@@ -96,7 +115,7 @@ export function NotificationBell() {
   useEffect(() => {
     if (!notifications.data) return;
     notificationTracker.current ??= new NotificationEventTracker();
-    const freshIds = notificationTracker.current.observe(notifications.data.items.map((item) => item.id));
+    const freshIds = notificationTracker.current.observe(notifications.data.items.filter((item) => !item.isRead).map((item) => item.id));
     if (soundEnabled) freshIds.forEach((_, index) => window.setTimeout(playChime, index * 260));
   }, [notifications.data, playChime, soundEnabled]);
 
@@ -178,7 +197,7 @@ export function NotificationBell() {
   };
 
   return (
-    <div className="fixed top-4 right-4 z-[60]">
+    <div ref={popupRoot} className="fixed top-[calc(env(safe-area-inset-top,0px)+12px)] right-3 z-[60] md:top-8 md:right-8">
       <button
         type="button"
         aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"}
@@ -188,7 +207,7 @@ export function NotificationBell() {
           unlockSound();
           setOpen((value) => !value);
         }}
-        className="relative grid size-12 place-items-center rounded-full border border-white/15 bg-sidebar text-white shadow-admin-lift outline-none transition hover:bg-burgundy-bright focus-visible:ring-2 focus-visible:ring-burgundy focus-visible:ring-offset-2"
+        className="relative grid size-11 place-items-center rounded-full border border-white/15 bg-sidebar text-white shadow-admin-lift outline-none transition hover:bg-burgundy-bright focus-visible:ring-2 focus-visible:ring-burgundy focus-visible:ring-offset-2 sm:size-12"
       >
         <Bell aria-hidden className="size-5" />
         {unreadCount > 0 && (
@@ -202,9 +221,9 @@ export function NotificationBell() {
         <section
           id="admin-notification-panel"
           aria-label="Booking notifications"
-          className="absolute top-14 right-0 w-[min(24rem,calc(100vw-6rem))] overflow-hidden rounded-2xl border border-burgundy/10 bg-white text-wine-ink shadow-admin-lift"
+          className="fixed top-[calc(env(safe-area-inset-top,0px)+68px)] right-3 flex max-h-[calc(100dvh-7rem)] w-[min(24rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-burgundy/10 bg-white text-wine-ink shadow-admin-lift md:top-[88px] md:right-8"
         >
-          <header className="flex items-center justify-between gap-3 border-b border-burgundy/10 px-4 py-3">
+          <header className="flex shrink-0 items-center justify-between gap-3 border-b border-burgundy/10 px-4 py-3">
             <div>
               <h2 className="font-bold">Notifications</h2>
               <p className="text-xs text-wine-ink/50">{unreadCount} unread booking{unreadCount === 1 ? "" : "s"}</p>
@@ -219,7 +238,7 @@ export function NotificationBell() {
             </button>
           </header>
 
-          <div className="max-h-[min(65vh,30rem)] overflow-y-auto">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
             {notifications.isPending ? (
               <p className="px-4 py-8 text-center text-sm text-wine-ink/50">Loading notifications…</p>
             ) : items.length === 0 ? (
@@ -271,7 +290,7 @@ export function NotificationBell() {
               </ul>
             )}
           </div>
-          <footer className="border-t border-burgundy/10 px-4 py-2.5">
+          <footer className="shrink-0 border-t border-burgundy/10 bg-white px-4 py-2.5">
             <div className="mb-2 flex flex-wrap gap-2">
               <button
                 type="button"
@@ -299,7 +318,7 @@ export function NotificationBell() {
                 setOpen(false);
                 router.push("/admin/bookings");
               }}
-              className="text-xs font-bold text-burgundy underline-offset-4 hover:underline"
+              className="inline-flex min-h-8 items-center rounded-lg px-1 text-xs font-bold text-burgundy underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-burgundy"
             >
               Open bookings
             </button>

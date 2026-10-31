@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { formatIstClock, type UnitAvailabilitySummary } from "@district-viii/shared";
 import { CountUp } from "./CountUp";
 import { HomeCard } from "./HomeCard";
@@ -10,10 +9,10 @@ interface AvailabilityCardProps {
   /** Plural noun for the caption, e.g. "tables" or "consoles". */
   unitNoun: string;
   availability: UnitAvailabilitySummary;
-  decoration: ReactNode;
+  imageSrc: string;
 }
 
-export function AvailabilityCard({ href, label, unitNoun, availability, decoration }: AvailabilityCardProps) {
+export function AvailabilityCard({ href, label, unitNoun, availability, imageSrc }: AvailabilityCardProps) {
   const { free, total, nextFreeAt } = availability;
   const isFull = free === 0;
   const nextFree = nextFreeAt ? formatIstClock(nextFreeAt) : null;
@@ -27,7 +26,7 @@ export function AvailabilityCard({ href, label, unitNoun, availability, decorati
       ariaLabel={ariaLabel}
       label={label}
       badge={<StatusPill variant={isFull ? "full" : "available"} />}
-      decoration={decoration}
+      imageSrc={imageSrc}
     >
       <p className="flex -skew-x-8 items-baseline gap-2 font-display leading-none text-white">
         <CountUp value={free} className="text-[clamp(2.75rem,36cqh,6rem)]" />
